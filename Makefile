@@ -1,4 +1,4 @@
 
 .PHONY: dev
 dev:
-	air
+	air & pnpm dev

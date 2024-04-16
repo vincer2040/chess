@@ -1,8 +1,21 @@
 package chess
 
-import "fmt"
+import (
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	"github.com/vincer2040/chess/internal/render"
+	"github.com/vincer2040/chess/internal/routes"
+)
 
 func Main() error {
-    fmt.Println("hi mom")
+    e := echo.New()
+
+    e.Renderer = render.New()
+
+    e.Use(middleware.Logger())
+
+    e.GET("/", routes.RootGet)
+
+    e.Logger.Fatal(e.Start(":8080"))
     return nil
 }
