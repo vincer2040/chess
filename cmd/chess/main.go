@@ -13,6 +13,7 @@ func Main() error {
     e.Renderer = render.New()
 
     e.Use(middleware.Logger())
+    e.Static("pieces", "public/pieces")
 
     e.GET("/", routes.RootGet)
 

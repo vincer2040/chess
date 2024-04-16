@@ -12,6 +12,9 @@ export default defineConfig({
     build: {
         target: 'esnext',
         manifest: true,
-        input: "src/main.js",
+        assetsDir: "assets",
+        rollupOptions: {
+            input: "src/main.js",
+        },
     },
 });
