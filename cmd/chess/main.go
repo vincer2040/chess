@@ -16,6 +16,7 @@ func Main() error {
     e.Static("pieces", "public/pieces")
 
     e.GET("/", routes.RootGet)
+    e.GET("/game", routes.GameGet)
 
     e.Logger.Fatal(e.Start(":8080"))
     return nil
