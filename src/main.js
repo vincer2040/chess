@@ -15,7 +15,7 @@ ws.addEventListener("message", (e) => {
     console.log(d);
 });
 
-const buf = new Builder().addCommand("START").getBuf();
+const buf = new Builder().addCommand("LEGAL_MOVES").getBuf();
 
 ws.addEventListener("open", () => {
     ws.send(buf);

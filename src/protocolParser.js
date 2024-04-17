@@ -1,12 +1,15 @@
 import { DataTypes } from "./types"
 
-const POSITION_BYTE = 43 // +
-const MOVE_BYTE = 36 // $
-const MOVE_SEPERATOR = 58 // :
-const RET_CAR = 13 // \r
-const NEW_LINE = 10 // \n
+const POSITION_BYTE = 43; // +
+const MOVE_BYTE = 36; // $
+const SEPARATOR = 58; // :
+const RET_CAR = 13; // \r
+const NEW_LINE = 10; // \n
 const ERROR_BYTE = 45; // -
-const COMMAND_BYTE = 35 // #
+const COMMAND_BYTE = 35; // #
+const LEGAL_MOVES = 126; // ~
+const ARRAY_BYTE = 42; // *
+const ZERO_BYTE = 48; // 0
 
 export class Parser {
     /** @type {Uint8Array} */
@@ -32,7 +35,7 @@ export class Parser {
      * @returns {import("./types").DataFromServer}
      */
     parse() {
-        /** @type {import("./types").Move | string | null} */
+        /** @type {import("./types").LegalMoves | import("./types").Move | string | null} */
         let data = null;
         /** @type {import("./types").DataType} */
         let type = DataTypes.Illegal;
@@ -61,6 +64,12 @@ export class Parser {
                     type = DataTypes.Error;
                 }
                 break
+            case LEGAL_MOVES:
+                data = this.#parseLegalMoves();
+                if (data !== null) {
+                    type = DataTypes.LegalMoves;
+                }
+                break
         }
         return { type, data};
     }
@@ -72,7 +81,7 @@ export class Parser {
         this.#readByte();
         let from = "";
         let to = "";
-        while (this.#byte !== MOVE_SEPERATOR && this.#byte !== 0) {
+        while (this.#byte !== SEPARATOR && this.#byte !== 0) {
             from += String.fromCharCode(this.#byte);
             this.#readByte();
         }
@@ -134,6 +143,94 @@ export class Parser {
             return null;
         }
         return res;
+    }
+
+    /**
+     * @returns {import("./types").LegalMoves | null}
+     */
+    #parseLegalMoves() {
+        /** @type {import("./types").LegalMoves}*/
+        const res = new Map();
+        this.#readByte();
+        let len = 0;
+        while (this.#byte !== RET_CAR && this.#byte !== 0) {
+            len = (len * 10) + (this.#byte - ZERO_BYTE);
+            this.#readByte();
+        }
+        if (!this.#expectEnd()) {
+            return null;
+        }
+        this.#readByte();
+        for (let i = 0; i < len; ++i) {
+            let key = 0;
+            while (this.#byte !== RET_CAR && this.#byte !== 0) {
+                key = (key * 10) + (this.#byte - ZERO_BYTE);
+                this.#readByte();
+            }
+            if (!this.#expectEnd()) {
+                return null;
+            }
+            if (!this.#expectPeek(ARRAY_BYTE)) {
+                return null;
+            }
+            this.#readByte();
+            let numMoves = 0;
+            while (this.#byte !== RET_CAR && this.#byte !== 0) {
+                numMoves = (numMoves * 10) + (this.#byte - ZERO_BYTE);
+                this.#readByte();
+            }
+            if (!this.#expectEnd()) {
+                return null;
+            }
+            this.#readByte();
+            /** @type {number[]}*/
+            let moves = [];
+            while (this.#byte !== RET_CAR && this.#byte !== 0) {
+                let move = 0;
+                // @ts-ignore:
+                while (this.#byte !== SEPARATOR && this.#byte != RET_CAR && this.#byte !== 0) {
+                    move = (move * 10) + (this.#byte - ZERO_BYTE);
+                    this.#readByte();
+                }
+                moves.push(move);
+                // @ts-ignore:
+                if (this.#byte === SEPARATOR) {
+                    this.#readByte();
+                }
+            }
+            if (!this.#expectEnd()) {
+                return null;
+            }
+            if (moves.length !== numMoves) {
+                return null;
+            }
+            this.#readByte();
+            res.set(key, moves);
+        }
+        return res;
+    }
+
+    /**
+     * @param {number} byte
+     * @returns {boolean}
+     */
+    #expectPeek(byte) {
+        const peek = this.#peek();
+        if (peek !== byte) {
+            return false;
+        }
+        this.#readByte();
+        return true;
+    }
+
+    /**
+     * @returns {number}
+     */
+    #peek() {
+        if (this.#pos >= this.#buf.length) {
+            return 0;
+        }
+        return this.#buf[this.#pos];
     }
 
     #readByte() {
