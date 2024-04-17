@@ -34,3 +34,25 @@ export function numToFile(num) {
     ];
     return els[num];
 }
+
+const pieceToUrlMap = new Map([
+    ["B", "/pieces/B.svg"],
+    ["K", "/pieces/K.svg"],
+    ["N", "/pieces/N.svg"],
+    ["P", "/pieces/P.svg"],
+    ["Q", "/pieces/Q.svg"],
+    ["R", "/pieces/R.svg"],
+    ["b", "/pieces/b.svg"],
+    ["k", "/pieces/k.svg"],
+    ["n", "/pieces/n.svg"],
+    ["p", "/pieces/p.svg"],
+    ["q", "/pieces/q.svg"],
+    ["r", "/pieces/r.svg"],
+]);
+
+/**
+ * @param {string} piece
+ */
+export function getPieceUrl(piece) {
+    return pieceToUrlMap.get(piece);
+}

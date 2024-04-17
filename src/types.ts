@@ -1,4 +1,29 @@
 export type RankFile = {
-    rank: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
-    file: "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h";
+    rank: Rank;
+    file: File;
+}
+
+export type Move = {
+    from: number;
+    to: number;
+};
+
+export const Ranks = [1, 2, 3, 4, 5, 6, 7, 8];
+export type Rank = typeof Ranks[number];
+export const Files = ["a", "b", "c", "d", "e", "f", "g", "h"];
+export type File = typeof Files[number];
+
+export const DataTypes = {
+    Illegal: "illegal",
+    Position: "position",
+    Move: "move",
+    Error: "error",
+    Command: "command",
+} as const;
+
+export type DataType = typeof DataTypes[keyof typeof DataTypes];
+
+export type DataFromServer = {
+    type: DataType,
+    data: string | Move | null;
 }
