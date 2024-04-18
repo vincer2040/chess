@@ -205,6 +205,7 @@ export class Game {
             const square = ranks.item(rank)?.children.item(file);
             square?.classList.replace("bg-orange-100", "bg-red-500");
             square?.classList.replace("bg-sky-800", "bg-red-500");
+            square?.classList.replace("bg-sky-400", "bg-red-500");
         });
     }
 
