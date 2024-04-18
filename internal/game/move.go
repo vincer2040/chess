@@ -6,6 +6,19 @@ import (
 
 type LegalMoves map[int][]int
 
+type Direction int
+
+const (
+    North Direction = iota
+    East
+    South
+    West
+    NorthWest
+    NorthEast
+    SouthWest
+    SouthEast
+)
+
 func getLegalMoves(board Board, toMove byte, castleRights *CastleRights, enPessant int) LegalMoves {
 	var legalMoves LegalMoves = make(LegalMoves)
 	for idx, pieceInfo := range board {
@@ -70,63 +83,55 @@ func getPawnMoves(board Board, idx int, color Piece) []int {
 	var res []int
 	var sign int
 	var onStartSquare bool
-	if color == White {
-		onStartSquare = idx >= 48 && idx <= 55
-		sign = -1
-	} else {
-		onStartSquare = idx >= 8 && idx <= 15
-		sign = 1
-	}
-	sq := idx + (sign * 8)
-	if !board.hasPieceOnIdx(sq) && sq < 64 {
-		res = append(res, sq)
-	}
-	rank := getRankForIdx(sq)
-	maxIdxForTake := getMaxIdxForRank(rank)
-	minIdxForTake := getMinIdxForRank(rank)
-	left := sq - 1
-	right := sq + 1
-	if left >= minIdxForTake && board.hasPieceOnIdx(left) && !board.hasColorPieceOnIdx(left, color) {
-		res = append(res, left)
-	}
-	if right <= maxIdxForTake && board.hasPieceOnIdx(left) && !board.hasColorPieceOnIdx(right, color) {
-		res = append(res, right)
-	}
-	if onStartSquare {
-		sq = idx + (sign * 16)
-		res = append(res, sq)
-	}
+    if color == White {
+        sign = -1
+        onStartSquare = idx >= 48 && idx <= 55
+    } else {
+        sign = 1
+        onStartSquare = idx >= 8 && idx <= 15
+    }
+    sq := idx + (8 * sign)
+    if !board.hasPieceOnIdx(sq) {
+        res = append(res, sq)
+    }
+    left := sq - 1
+    right := sq + 1
+    if onStartSquare {
+        sq += (8 * sign)
+        if !board.hasPieceOnIdx(sq) {
+            res = append(res, sq)
+        }
+    }
+    if board.hasPieceOnIdx(left) && !board.hasColorPieceOnIdx(left, color) {
+        res = append(res, left)
+    }
+    if board.hasPieceOnIdx(right) && !board.hasColorPieceOnIdx(right, color) {
+        res = append(res, right)
+    }
 	return res
 }
 
 func getDiagonalMoves(board Board, idx int, color Piece) []int {
 	var res []int
 	offsets := []int{9, 7, -9, -7}
-	sq := idx
-	for _, offset := range offsets {
-		sq += offset
-		for sq < 64 && sq >= 0 {
-			if !board.hasPieceOnIdx(sq) {
-				res = append(res, sq)
-				sq += offset
-				continue
-			}
-			if board.hasColorPieceOnIdx(sq, color) {
-				break
-			}
-			if squareIsEdge(sq) {
-				if !board.hasPieceOnIdx(sq) {
-					res = append(res, sq)
-					sq += offset
-				} else if !board.hasColorPieceOnIdx(sq, color) {
-					res = append(res, sq)
-				}
-				break
-			}
-			res = append(res, sq)
-			break
-		}
-		sq = idx
+    directions := []Direction{SouthEast, SouthWest, NorthWest, NorthEast}
+	for i, offset := range offsets {
+        dir := directions[i]
+        n := getMaxToEdge(idx, dir)
+        sq := idx + offset
+        for j := 0; j < n; j++ {
+            if !board.hasPieceOnIdx(sq) {
+                res = append(res, sq)
+                sq += offset
+                continue
+            }
+            if !board.hasColorPieceOnIdx(sq, color) {
+                res = append(res, sq)
+                break
+            }
+            break
+        }
+        sq = idx
 	}
 	return res
 }
@@ -134,21 +139,23 @@ func getDiagonalMoves(board Board, idx int, color Piece) []int {
 func getStraightMoves(board Board, idx int, color Piece) []int {
 	var res []int
 	offsets := []int{8, 1, -8, -1}
-	sq := idx
-	for _, offset := range offsets {
-		sq += offset
-		for sq < 64 && sq >= 0 {
-			if !board.hasPieceOnIdx(sq) {
-				res = append(res, sq)
-				sq += offset
-				continue
-			}
-			if board.hasColorPieceOnIdx(sq, color) {
-				break
-			}
-			res = append(res, sq)
-			break
-		}
+    dirs := []Direction{South, East, North, West}
+	for i, offset := range offsets {
+        dir := dirs[i]
+        n := getMaxToEdge(idx, dir)
+        sq := idx + offset
+        for j := 0; j < n; j++ {
+            if !board.hasPieceOnIdx(sq) {
+                res = append(res, sq)
+                sq += offset
+                continue
+            }
+            if !board.hasColorPieceOnIdx(sq, color) {
+                res = append(res, sq)
+                break
+            }
+            break
+        }
 		sq = idx
 	}
 	return res
@@ -163,11 +170,11 @@ func getKnightMoves(board Board, idx int, color Piece) []int {
 		{x: 1, y: 16},
 		{x: -1, y: 16},
 		{x: 2, y: 8},
-		{x: -2, y: 9},
+		{x: -2, y: 8},
 		{x: 1, y: -16},
 		{x: -1, y: -16},
 		{x: 2, y: -8},
-		{x: -2, y: -9},
+		{x: -2, y: -8},
 	}
 	for _, offset := range offsets {
 		sq := idx + offset.y
@@ -251,4 +258,36 @@ func GetKingMoves(board Board, idx int, color Piece, castleRights *CastleRights)
 		}
 	}
 	return res
+}
+
+func getMaxToEdge(idx int, dir Direction) int {
+    rank := getRankForIdx(idx)
+    file := getFileForIdx(idx)
+    switch dir {
+    case North:
+        return rank
+    case South:
+        return 7 - rank
+    case West:
+        return file
+    case East:
+        return 7 - file
+    case NorthWest:
+        n := rank
+        w := file
+        return int(math.Min(float64(n), float64(w)))
+    case NorthEast:
+        n := rank
+        e := 7 - file
+        return int(math.Min(float64(n), float64(e)))
+    case SouthWest:
+        s := 7 - rank
+        w := file
+        return int(math.Min(float64(s), float64(w)))
+    case SouthEast:
+        s := 7 - rank
+        e := 7 - file
+        return int(math.Min(float64(s), float64(e)))
+    }
+    return 0
 }

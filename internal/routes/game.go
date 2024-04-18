@@ -38,7 +38,6 @@ func GameGet(c echo.Context) error {
 
         buf := handleData(&data, &g)
 
-        fmt.Println("writing:", string(buf))
         err = ws.WriteMessage(websocket.TextMessage, buf)
         if err != nil {
             c.Logger().Error(err)
@@ -57,11 +56,23 @@ func handleData(data *types.Data, game *game.Game) protocol.Builder {
     case types.CommandType:
         cmd := data.Data.(types.Command)
         fmt.Println("command:", cmd)
-        b = b.AddCommand("OK")
+        switch cmd {
+        case "LEGAL_MOVES":
+            legalMoves := game.GetLegalMoves()
+            b = b.AddLegalMoves(legalMoves)
+            break
+        case "START":
+            b = b.AddCommand("OK")
+            break
+        default:
+            b = b.AddError(fmt.Sprintf("unknown command: %s", cmd))
+            break
+        }
         break
     case types.MoveType:
         move := data.Data.(types.Move)
         fmt.Printf("move: %+v\n", move)
+        game.MakeMove(&move)
         b = b.AddCommand("OK")
         break
     case types.PositionType:

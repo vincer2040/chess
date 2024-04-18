@@ -1,6 +1,10 @@
 package game
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/vincer2040/chess/internal/types"
+)
 
 type Game struct {
 	board        Board
@@ -27,7 +31,19 @@ func New(fen string) Game {
     return g
 }
 
-func (g *Game) getLegalMoves() LegalMoves {
+func (g *Game) MakeMove(move *types.Move) {
+    movedPiece := g.board[move.From]
+    g.board[move.To] = movedPiece
+    g.board[move.From] = None
+    if g.toMove == 'w' {
+        g.toMove = 'b'
+    } else {
+        g.toMove = 'w'
+    }
+    g.legalMoves = getLegalMoves(g.board, g.toMove, &g.castleRights, g.enPessant)
+}
+
+func (g *Game) GetLegalMoves() LegalMoves {
 	return g.legalMoves
 }
 

@@ -8,8 +8,8 @@ import (
 )
 
 var BOARD_IDXS = [8][8]int{
-	[8]int{0, 1, 2, 3, 4, 5, 6, 7},
-	[8]int{8, 9, 10, 11, 12, 13, 14, 15},
+	[8]int{0,  1,  2,  3,  4,  5,  6,  7},
+	[8]int{8,  9,  10, 11, 12, 13, 14, 15},
 	[8]int{16, 17, 18, 19, 20, 21, 22, 23},
 	[8]int{24, 25, 26, 27, 28, 29, 30, 31},
 	[8]int{32, 33, 34, 35, 36, 37, 38, 39},
@@ -73,6 +73,10 @@ func getMaxIdxForRank(rank int) int {
 
 func getRankForIdx(idx int) int {
 	return idx / 8
+}
+
+func getFileForIdx(idx int) int {
+    return idx % 8
 }
 
 func squareIsEdge(idx int) bool {
