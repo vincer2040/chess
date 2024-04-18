@@ -113,7 +113,7 @@ func (p *Parser) parseMove() (types.Move, error) {
     if err != nil {
         return types.Move{}, err
     }
-    to, err := strconv.Atoi(fromBuf.String())
+    to, err := strconv.Atoi(toBuf.String())
     if err != nil {
         return types.Move{}, err
     }
