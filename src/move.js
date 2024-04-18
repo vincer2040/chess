@@ -42,6 +42,22 @@ export function getSquare(board, square) {
 
 /**
  * @param {number} num
+ * @returns {number}
+ */
+export function getRankFromIdx(num) {
+    return Math.floor(num / 8);
+}
+
+/**
+ * @param {number} num
+ * @returns {number}
+ */
+export function getFileFromIdx(num) {
+    return num % 8;
+}
+
+/**
+ * @param {number} num
  * @returns import("./types").Rank
  */
 function getRankFromNum(num) {

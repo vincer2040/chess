@@ -113,6 +113,7 @@ export class Builder {
     reset() {
         this.#len = 0;
         this.#view.fill(0);
+        return this;
     }
 
     #addEnd() {
