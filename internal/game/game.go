@@ -8,9 +8,10 @@ import (
 
 type Game struct {
 	board        Board
+	trackedMoves []TrackedMove
 	toMove       byte
 	castleRights CastleRights
-	enPessant    int
+	enPassant    int
 	legalMoves   LegalMoves
 }
 
@@ -20,27 +21,44 @@ func New(fen string) Game {
 	board := newBoard(p)
 	toMove := byte(split[1][0])
 	castleRights := split[2]
-    g :=  Game{
+	g := Game{
 		board:        board,
+		trackedMoves: make([]TrackedMove, 0),
 		toMove:       toMove,
 		castleRights: newCastleRights(castleRights),
-		enPessant:    -1,
-        legalMoves: nil,
+		enPassant:    -1,
+		legalMoves:   nil,
 	}
-    g.legalMoves = getLegalMoves(g.board, g.toMove, &g.castleRights, g.enPessant)
-    return g
+	g.legalMoves = getLegalMoves(g.board, g.toMove, &g.castleRights, g.enPassant)
+	return g
 }
 
 func (g *Game) MakeMove(move *types.Move) {
-    movedPiece := g.board[move.From]
-    g.board[move.To] = movedPiece
-    g.board[move.From] = None
-    if g.toMove == 'w' {
-        g.toMove = 'b'
+	movedPiece := g.board[move.From]
+    captured := g.board[move.To]
+    trackedMove := newTrackedMove(movedPiece, captured, move.From, move.To)
+	g.board[move.To] = movedPiece
+	g.board[move.From] = None
+
+	if trackedMove.IsCastle() {
+		g.castle(move)
+	}
+
+    // enable/disable en passant
+    if trackedMove.IsDoublePawnPush() {
+        g.enPassant = move.To
     } else {
-        g.toMove = 'w'
+        g.enPassant = -1
     }
-    g.legalMoves = getLegalMoves(g.board, g.toMove, &g.castleRights, g.enPessant)
+
+	if g.toMove == 'w' {
+		g.toMove = 'b'
+	} else {
+		g.toMove = 'w'
+	}
+
+    g.trackedMoves = append(g.trackedMoves, trackedMove)
+	g.legalMoves = getLegalMoves(g.board, g.toMove, &g.castleRights, g.enPassant)
 }
 
 func (g *Game) GetLegalMoves() LegalMoves {
@@ -49,6 +67,30 @@ func (g *Game) GetLegalMoves() LegalMoves {
 
 func (g *Game) PrintBoard() {
 	g.board.Print()
+}
+
+func (g *Game) castle(move *types.Move) {
+	if g.toMove == 'w' {
+		if move.To == 62 {
+			g.board[63] = None
+			g.board[61] = Rook | White
+		} else {
+			g.board[56] = None
+			g.board[59] = Rook | White
+		}
+		g.castleRights.WhiteKing = false
+		g.castleRights.WhiteQueen = false
+	} else {
+		if move.To == 6 {
+			g.board[7] = None
+			g.board[5] = Rook | Black
+		} else {
+			g.board[0] = None
+			g.board[3] = Rook | Black
+		}
+		g.castleRights.BlackKing = false
+		g.castleRights.BlackQueen = false
+	}
 }
 
 type CastleRights struct {
