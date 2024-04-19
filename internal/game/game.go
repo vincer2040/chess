@@ -44,6 +44,10 @@ func (g *Game) MakeMove(move *types.Move) {
 		g.castle(move)
 	}
 
+    if trackedMove.IsEnPassant() {
+        g.board[g.enPassant] = None
+    }
+
     if trackedMove.IsDoublePawnPush() {
         g.enPassant = move.To
     } else {
