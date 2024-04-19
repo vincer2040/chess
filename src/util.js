@@ -50,9 +50,38 @@ const pieceToUrlMap = new Map([
     ["r", "/pieces/r.svg"],
 ]);
 
+const urlToPieceMap = new Map([
+    ["/pieces/B.svg", "B"],
+    ["/pieces/K.svg", "K"],
+    ["/pieces/N.svg", "N"],
+    ["/pieces/P.svg", "P"],
+    ["/pieces/Q.svg", "Q"],
+    ["/pieces/R.svg", "R"],
+    ["/pieces/b.svg", "b"],
+    ["/pieces/k.svg", "k"],
+    ["/pieces/n.svg", "n"],
+    ["/pieces/p.svg", "p"],
+    ["/pieces/q.svg", "q"],
+    ["/pieces/r.svg", "r"],
+]);
+
 /**
  * @param {string} piece
  */
 export function getPieceUrl(piece) {
     return pieceToUrlMap.get(piece);
+}
+
+/**
+ * @param {string} url
+ */
+export function getPieceFromUrl(url) {
+    return urlToPieceMap.get(url);
+}
+
+/**
+ * @param {string} piece
+ */
+export function pieceColor(piece) {
+    return piece.toUpperCase() === piece ? "white" : "black";
 }

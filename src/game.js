@@ -2,7 +2,7 @@ import { getFileFromIdx, getRankFromIdx, getSquare, getSquareIdx } from "./move"
 import { Builder } from "./protocolBuilder";
 import { Parser } from "./protocolParser";
 import { DataTypes } from "./types";
-import { isDigit, createPiece, getPieceUrl } from "./util";
+import { isDigit, createPiece, getPieceUrl, getPieceFromUrl, pieceColor } from "./util";
 import { Queue } from "./queue";
 
 export class Game {
@@ -113,7 +113,6 @@ export class Game {
                 break;
             case DataTypes.LegalMoves:
                 this.#legalMoves = /** @type {import("./types").LegalMoves} */(data.data);
-                console.log(data.data);
                 break
             case DataTypes.Move:
                 break
@@ -169,6 +168,69 @@ export class Game {
     }
 
     /**
+     * @param {import("./types").Move} move
+     * @returns {boolean}
+     */
+    #isCastle(move) {
+        // @ts-ignore:
+        const piece = getPieceFromUrl(this.#moving.src.replace("http://localhost:8080", ""));
+        if (piece !== "K" && piece !== "k") {
+            return false
+        }
+        const amtMoved = Math.abs(move.to - move.from);
+        return amtMoved === 2;
+    }
+
+    /**
+     * @param {import("./types").Move} move
+     */
+    #castle(move) {
+        if (!this.#moving) {
+            throw new Error("no moving");
+        }
+        const piece = getPieceFromUrl(this.#moving.src.replace("http://localhost:8080", ""));
+        // @ts-ignore:
+        const color = pieceColor(piece);
+        if (color === "white") {
+            if (move.to > move.from) {
+                // castle king side
+                const rook = this.#board.children.item(7)?.children.item(7)?.children.item(0);
+                if (!rook) {
+                    throw new Error("no rook");
+                }
+                rook.remove();
+                this.#board.children.item(7)?.children.item(5)?.append(rook);
+            } else {
+                // castle queen side
+                const rook = this.#board.children.item(7)?.children.item(0)?.children.item(0);
+                if (!rook) {
+                    throw new Error("no rook");
+                }
+                rook.remove();
+                this.#board.children.item(7)?.children.item(3)?.append(rook);
+            }
+        } else {
+            if (move.to > move.from) {
+                // castle king side
+                const rook = this.#board.children.item(0)?.children.item(7)?.children.item(0);
+                if (!rook) {
+                    throw new Error("no rook");
+                }
+                rook.remove();
+                this.#board.children.item(0)?.children.item(5)?.append(rook);
+            } else {
+                // castle queen side
+                const rook = this.#board.children.item(0)?.children.item(0)?.children.item(0);
+                if (!rook) {
+                    throw new Error("no rook");
+                }
+                rook.remove();
+                this.#board.children.item(0)?.children.item(3)?.append(rook);
+            }
+        }
+    }
+
+    /**
      * @param {MouseEvent} e
      */
     #mouseDown(e) {
@@ -194,19 +256,8 @@ export class Game {
 
         this.#moveFromIdx = getSquareIdx(this.#board, parent);
 
-        const ranks = this.#board.children;
         const pieceLegalMoves = this.#legalMoves.get(this.#moveFromIdx);
-        if (!pieceLegalMoves) {
-            return;
-        }
-        pieceLegalMoves.forEach((idx) => {
-            const rank = getRankFromIdx(idx);
-            const file = getFileFromIdx(idx);
-            const square = ranks.item(rank)?.children.item(file);
-            square?.classList.replace("bg-orange-100", "bg-red-500");
-            square?.classList.replace("bg-sky-800", "bg-red-500");
-            square?.classList.replace("bg-sky-400", "bg-red-500");
-        });
+        this.#drawLegalMoves(pieceLegalMoves);
     }
 
     /**
@@ -270,8 +321,19 @@ export class Game {
             return;
         }
 
+        /** @type {import("./types").Move}*/
+        const move = {
+            from: this.#moveFromIdx,
+            to: this.#moveToIdx,
+        };
+
+        const iscastle = this.#isCastle(move);
+
         if (!isCapture) {
             this.#toSquare.append(this.#moving);
+            if (iscastle) {
+                this.#castle(move);
+            }
         } else {
             this.#toSquare.replaceChildren(this.#moving);
         }
@@ -279,12 +341,25 @@ export class Game {
         this.#moving = null;
         this.#fromSquare = null;
         this.#toSquare = null;
-        /** @type {import("./types").Move}*/
-        const move = {
-            from: this.#moveFromIdx,
-            to: this.#moveToIdx,
-        };
         this.#emitMove(move);
+    }
+
+    /**
+     * @param {number[] | undefined} legalMoves
+     */
+    #drawLegalMoves(legalMoves) {
+        if (!legalMoves) {
+            return;
+        }
+        const ranks = this.#board.children;
+        legalMoves.forEach((idx) => {
+            const rank = getRankFromIdx(idx);
+            const file = getFileFromIdx(idx);
+            const square = ranks.item(rank)?.children.item(file);
+            square?.classList.replace("bg-orange-100", "bg-red-500");
+            square?.classList.replace("bg-sky-800", "bg-red-500");
+            square?.classList.replace("bg-sky-400", "bg-red-500");
+        });
     }
 
     /**
