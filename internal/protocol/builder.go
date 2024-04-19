@@ -29,20 +29,20 @@ func (b Builder) AddLegalMoves(legalMoves game.LegalMoves) Builder {
 	}
 	b = b.addEnd()
 	for k, v := range legalMoves {
-        // add the key
+		// add the key
 		key := strconv.Itoa(k)
 		for _, ch := range key {
 			b = append(b, byte(ch))
 		}
 		b = b.addEnd()
-        // add the number of moves for this piece
-        b = append(b, ARRAY_BYTE)
-        l := strconv.Itoa(len(v))
-        for _, ch := range l {
-            b = append(b, byte(ch))
-        }
+		// add the number of moves for this piece
+		b = append(b, ARRAY_BYTE)
+		l := strconv.Itoa(len(v))
+		for _, ch := range l {
+			b = append(b, byte(ch))
+		}
 		b = b.addEnd()
-        // add the moves
+		// add the moves
 		for i, idx := range v {
 			s := strconv.Itoa(idx)
 			for _, ch := range s {
@@ -88,8 +88,8 @@ func (b Builder) AddError(error string) Builder {
 }
 
 func (b Builder) Reset() Builder {
-    b = []byte{}
-    return b
+	b = []byte{}
+	return b
 }
 
 func (b Builder) addEnd() Builder {
