@@ -44,7 +44,6 @@ func (g *Game) MakeMove(move *types.Move) {
 		g.castle(move)
 	}
 
-    // enable/disable en passant
     if trackedMove.IsDoublePawnPush() {
         g.enPassant = move.To
     } else {

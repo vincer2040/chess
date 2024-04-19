@@ -9,14 +9,14 @@ type LegalMoves map[int][]int
 type Direction int
 
 const (
-    North Direction = iota
-    East
-    South
-    West
-    NorthWest
-    NorthEast
-    SouthWest
-    SouthEast
+	North Direction = iota
+	East
+	South
+	West
+	NorthWest
+	NorthEast
+	SouthWest
+	SouthEast
 )
 
 func getLegalMoves(board Board, toMove byte, castleRights *CastleRights, enPassant int) LegalMoves {
@@ -33,7 +33,7 @@ func getLegalMoves(board Board, toMove byte, castleRights *CastleRights, enPassa
 
 		switch piece {
 		case Pawn:
-			moves := getPawnMoves(board, idx, color)
+			moves := getPawnMoves(board, idx, color, enPassant)
 			if len(moves) == 0 {
 				break
 			}
@@ -79,62 +79,87 @@ func getLegalMoves(board Board, toMove byte, castleRights *CastleRights, enPassa
 	return legalMoves
 }
 
-func getPawnMoves(board Board, idx int, color Piece) []int {
+func getPawnMoves(board Board, idx int, color Piece, enPassant int) []int {
 	var res []int
 	var sign int
 	var onStartSquare bool
-    if color == White {
-        sign = -1
-        onStartSquare = idx >= 48 && idx <= 55
-    } else {
-        sign = 1
-        onStartSquare = idx >= 8 && idx <= 15
-    }
-    sq := idx + (8 * sign)
-    if !board.hasPieceOnIdx(sq) {
-        res = append(res, sq)
-    }
-    rank := getRankForIdx(sq)
-    left := sq - 1
-    right := sq + 1
-    if onStartSquare {
-        sq += (8 * sign)
-        if !board.hasPieceOnIdx(sq) {
-            res = append(res, sq)
-        }
-    }
-    leftRank := getRankForIdx(left)
-    rightRank := getRankForIdx(right)
-    if board.hasPieceOnIdx(left) && !board.hasColorPieceOnIdx(left, color) && rank == leftRank {
-        res = append(res, left)
-    }
-    if board.hasPieceOnIdx(right) && !board.hasColorPieceOnIdx(right, color) && rank == rightRank {
-        res = append(res, right)
-    }
+	if color == White {
+		sign = -1
+		onStartSquare = idx >= 48 && idx <= 55
+	} else {
+		sign = 1
+		onStartSquare = idx >= 8 && idx <= 15
+	}
+	sq := idx + (8 * sign)
+	if !board.hasPieceOnIdx(sq) {
+		res = append(res, sq)
+	}
+	rank := getRankForIdx(sq)
+	left := sq - 1
+	right := sq + 1
+	if onStartSquare {
+		sq += (8 * sign)
+		if !board.hasPieceOnIdx(sq) {
+			res = append(res, sq)
+		}
+	}
+	leftRank := getRankForIdx(left)
+	rightRank := getRankForIdx(right)
+	if board.hasPieceOnIdx(left) && !board.hasColorPieceOnIdx(left, color) && rank == leftRank {
+		res = append(res, left)
+	}
+	if board.hasPieceOnIdx(right) && !board.hasColorPieceOnIdx(right, color) && rank == rightRank {
+		res = append(res, right)
+	}
+	if enPassant == -1 {
+		return res
+	}
+	rank = getRankForIdx(idx)
+	left = idx - 1
+	right = idx + 1
+	leftRank = getRankForIdx(left)
+	rightRank = getRankForIdx(right)
+	if enPassant == left {
+		if leftRank == rank {
+			if color == White {
+				res = append(res, left-8)
+			} else {
+				res = append(res, left+8)
+			}
+		}
+	} else if enPassant == right {
+		if rightRank == rank {
+			if color == White {
+				res = append(res, right-8)
+			} else {
+				res = append(res, right+8)
+			}
+		}
+	}
 	return res
 }
 
 func getDiagonalMoves(board Board, idx int, color Piece) []int {
 	var res []int
 	offsets := []int{9, 7, -9, -7}
-    directions := []Direction{SouthEast, SouthWest, NorthWest, NorthEast}
+	directions := []Direction{SouthEast, SouthWest, NorthWest, NorthEast}
 	for i, offset := range offsets {
-        dir := directions[i]
-        n := getMaxToEdge(idx, dir)
-        sq := idx + offset
-        for j := 0; j < n; j++ {
-            if !board.hasPieceOnIdx(sq) {
-                res = append(res, sq)
-                sq += offset
-                continue
-            }
-            if !board.hasColorPieceOnIdx(sq, color) {
-                res = append(res, sq)
-                break
-            }
-            break
-        }
-        sq = idx
+		dir := directions[i]
+		n := getMaxToEdge(idx, dir)
+		sq := idx + offset
+		for j := 0; j < n; j++ {
+			if !board.hasPieceOnIdx(sq) {
+				res = append(res, sq)
+				sq += offset
+				continue
+			}
+			if !board.hasColorPieceOnIdx(sq, color) {
+				res = append(res, sq)
+				break
+			}
+			break
+		}
+		sq = idx
 	}
 	return res
 }
@@ -142,23 +167,23 @@ func getDiagonalMoves(board Board, idx int, color Piece) []int {
 func getStraightMoves(board Board, idx int, color Piece) []int {
 	var res []int
 	offsets := []int{8, 1, -8, -1}
-    dirs := []Direction{South, East, North, West}
+	dirs := []Direction{South, East, North, West}
 	for i, offset := range offsets {
-        dir := dirs[i]
-        n := getMaxToEdge(idx, dir)
-        sq := idx + offset
-        for j := 0; j < n; j++ {
-            if !board.hasPieceOnIdx(sq) {
-                res = append(res, sq)
-                sq += offset
-                continue
-            }
-            if !board.hasColorPieceOnIdx(sq, color) {
-                res = append(res, sq)
-                break
-            }
-            break
-        }
+		dir := dirs[i]
+		n := getMaxToEdge(idx, dir)
+		sq := idx + offset
+		for j := 0; j < n; j++ {
+			if !board.hasPieceOnIdx(sq) {
+				res = append(res, sq)
+				sq += offset
+				continue
+			}
+			if !board.hasColorPieceOnIdx(sq, color) {
+				res = append(res, sq)
+				break
+			}
+			break
+		}
 		sq = idx
 	}
 	return res
@@ -264,33 +289,33 @@ func GetKingMoves(board Board, idx int, color Piece, castleRights *CastleRights)
 }
 
 func getMaxToEdge(idx int, dir Direction) int {
-    rank := getRankForIdx(idx)
-    file := getFileForIdx(idx)
-    switch dir {
-    case North:
-        return rank
-    case South:
-        return 7 - rank
-    case West:
-        return file
-    case East:
-        return 7 - file
-    case NorthWest:
-        n := rank
-        w := file
-        return int(math.Min(float64(n), float64(w)))
-    case NorthEast:
-        n := rank
-        e := 7 - file
-        return int(math.Min(float64(n), float64(e)))
-    case SouthWest:
-        s := 7 - rank
-        w := file
-        return int(math.Min(float64(s), float64(w)))
-    case SouthEast:
-        s := 7 - rank
-        e := 7 - file
-        return int(math.Min(float64(s), float64(e)))
-    }
-    return 0
+	rank := getRankForIdx(idx)
+	file := getFileForIdx(idx)
+	switch dir {
+	case North:
+		return rank
+	case South:
+		return 7 - rank
+	case West:
+		return file
+	case East:
+		return 7 - file
+	case NorthWest:
+		n := rank
+		w := file
+		return int(math.Min(float64(n), float64(w)))
+	case NorthEast:
+		n := rank
+		e := 7 - file
+		return int(math.Min(float64(n), float64(e)))
+	case SouthWest:
+		s := 7 - rank
+		w := file
+		return int(math.Min(float64(s), float64(w)))
+	case SouthEast:
+		s := 7 - rank
+		e := 7 - file
+		return int(math.Min(float64(s), float64(e)))
+	}
+	return 0
 }
