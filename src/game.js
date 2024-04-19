@@ -183,6 +183,32 @@ export class Game {
 
     /**
      * @param {import("./types").Move} move
+     * @returns {[boolean, HTMLImageElement | null]}
+     */
+    #isEnPassant(move) {
+        // @ts-ignore:
+        const piece = getPieceFromUrl(this.#moving.src.replace("http://localhost:8080", ""));
+        if (piece !== 'P' && piece !== 'p') {
+            return [false, null];
+        }
+        const amtMoved = Math.abs(move.to - move.from);
+        if (amtMoved !== 7 && amtMoved !== 9) {
+            return [false, null];
+        }
+        const rank = getRankFromIdx(this.#moveFromIdx);
+        const file = getFileFromIdx(this.#moveFromIdx);
+        if (amtMoved === 9) {
+            const captured = this.#board?.children.item(rank)?.children.item(piece === 'P' ? file - 1 : file + 1)?.children.item(0);
+            // @ts-ignore:
+            return [true, captured];
+        }
+        const captured = this.#board?.children.item(rank)?.children.item(piece === 'P' ? file + 1 : file - 1)?.children.item(0);
+        // @ts-ignore:
+        return [true, captured];
+    }
+
+    /**
+     * @param {import("./types").Move} move
      */
     #castle(move) {
         if (!this.#moving) {
@@ -333,6 +359,10 @@ export class Game {
             this.#toSquare.append(this.#moving);
             if (iscastle) {
                 this.#castle(move);
+            }
+            const [isEnPassant, captured] = this.#isEnPassant(move);
+            if (isEnPassant) {
+                captured?.remove();
             }
         } else {
             this.#toSquare.replaceChildren(this.#moving);
