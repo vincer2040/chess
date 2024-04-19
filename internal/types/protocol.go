@@ -30,7 +30,7 @@ type Move struct {
 
 type Error string
 
-func (c Command) data() {}
+func (c Command) data()  {}
 func (p Position) data() {}
-func (m Move) data() {}
-func (e Error) data() {}
+func (m Move) data()     {}
+func (e Error) data()    {}

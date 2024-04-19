@@ -39,21 +39,21 @@ func (tm *TrackedMove) IsDoublePawnPush() bool {
 }
 
 func (tm *TrackedMove) IsCapture() bool {
-    return tm.Captured != None
+	return tm.Captured != None
 }
 
 func (tm *TrackedMove) IsEnPassant() bool {
-    piece := tm.Piece & PIECEMASK
-    // we won't be able to tell initially
-    // that it is a capture even though
-    // it is because en passant moves
-    // go to a None square
-    if tm.IsCapture() {
-        return false
-    }
-    if piece != Pawn {
-        return false
-    }
-    amtMoved := int(math.Abs(float64(tm.To - tm.From)))
-    return amtMoved == 7 || amtMoved == 9
+	piece := tm.Piece & PIECEMASK
+	// we won't be able to tell initially
+	// that it is a capture even though
+	// it is because en passant moves
+	// go to a None square
+	if tm.IsCapture() {
+		return false
+	}
+	if piece != Pawn {
+		return false
+	}
+	amtMoved := int(math.Abs(float64(tm.To - tm.From)))
+	return amtMoved == 7 || amtMoved == 9
 }

@@ -7,5 +7,5 @@ import (
 )
 
 func RootGet(c echo.Context) error {
-    return c.Render(http.StatusOK, "index.html", nil)
+	return c.Render(http.StatusOK, "index.html", nil)
 }

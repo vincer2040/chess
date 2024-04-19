@@ -7,8 +7,8 @@ import (
 )
 
 func main() {
-    err := chess.Main()
-    if err != nil {
-        log.Fatalf("error: %v+\n", err)
-    }
+	err := chess.Main()
+	if err != nil {
+		log.Fatalf("error: %v+\n", err)
+	}
 }

@@ -35,8 +35,8 @@ func New(fen string) Game {
 
 func (g *Game) MakeMove(move *types.Move) {
 	movedPiece := g.board[move.From]
-    captured := g.board[move.To]
-    trackedMove := newTrackedMove(movedPiece, captured, move.From, move.To)
+	captured := g.board[move.To]
+	trackedMove := newTrackedMove(movedPiece, captured, move.From, move.To)
 	g.board[move.To] = movedPiece
 	g.board[move.From] = None
 
@@ -44,15 +44,15 @@ func (g *Game) MakeMove(move *types.Move) {
 		g.castle(move)
 	}
 
-    if trackedMove.IsEnPassant() {
-        g.board[g.enPassant] = None
-    }
+	if trackedMove.IsEnPassant() {
+		g.board[g.enPassant] = None
+	}
 
-    if trackedMove.IsDoublePawnPush() {
-        g.enPassant = move.To
-    } else {
-        g.enPassant = -1
-    }
+	if trackedMove.IsDoublePawnPush() {
+		g.enPassant = move.To
+	} else {
+		g.enPassant = -1
+	}
 
 	if g.toMove == 'w' {
 		g.toMove = 'b'
@@ -60,7 +60,7 @@ func (g *Game) MakeMove(move *types.Move) {
 		g.toMove = 'w'
 	}
 
-    g.trackedMoves = append(g.trackedMoves, trackedMove)
+	g.trackedMoves = append(g.trackedMoves, trackedMove)
 	g.legalMoves = getLegalMoves(g.board, g.toMove, &g.castleRights, g.enPassant)
 }
 
