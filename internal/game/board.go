@@ -78,38 +78,3 @@ func getRankForIdx(idx int) int {
 func getFileForIdx(idx int) int {
 	return idx % 8
 }
-
-func squareIsEdge(idx int) bool {
-	switch idx {
-	case 0:
-	case 1:
-	case 2:
-	case 3:
-	case 4:
-	case 5:
-	case 6:
-	case 7:
-	case 8:
-	case 16:
-	case 24:
-	case 32:
-	case 40:
-	case 48:
-	case 15:
-	case 23:
-	case 31:
-	case 39:
-	case 47:
-	case 55:
-	case 56:
-	case 57:
-	case 58:
-	case 59:
-	case 60:
-	case 61:
-	case 62:
-	case 63:
-		return true
-	}
-	return false
-}
