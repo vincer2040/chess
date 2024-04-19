@@ -69,7 +69,7 @@ func (g *Game) GetLegalMoves() LegalMoves {
 }
 
 func (g *Game) PrintBoard() {
-	g.board.Print()
+	g.board.print()
 }
 
 func (g *Game) castle(move *types.Move) {

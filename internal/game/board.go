@@ -38,7 +38,7 @@ func newBoard(pos string) Board {
 	return res
 }
 
-func (b Board) Print() {
+func (b Board) print() {
 	for i := 0; i < 8; i++ {
 		for j := 0; j < 8; j++ {
 			piece := b[(i*8)+j]
