@@ -1,6 +1,8 @@
 package game
 
-import "math"
+import (
+	"math"
+)
 
 type TrackedMove struct {
 	Piece    Piece
@@ -46,7 +48,7 @@ func (tm *TrackedMove) IsEnPassant() bool {
     // that it is a capture even though
     // it is because en passant moves
     // go to a None square
-    if !tm.IsCapture() {
+    if tm.IsCapture() {
         return false
     }
     if piece != Pawn {
