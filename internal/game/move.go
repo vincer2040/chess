@@ -19,7 +19,7 @@ const (
     SouthEast
 )
 
-func getLegalMoves(board Board, toMove byte, castleRights *CastleRights, enPessant int) LegalMoves {
+func getLegalMoves(board Board, toMove byte, castleRights *CastleRights, enPassant int) LegalMoves {
 	var legalMoves LegalMoves = make(LegalMoves)
 	for idx, pieceInfo := range board {
 		color := pieceInfo & COLORMASK
@@ -94,6 +94,7 @@ func getPawnMoves(board Board, idx int, color Piece) []int {
     if !board.hasPieceOnIdx(sq) {
         res = append(res, sq)
     }
+    rank := getRankForIdx(sq)
     left := sq - 1
     right := sq + 1
     if onStartSquare {
@@ -102,10 +103,12 @@ func getPawnMoves(board Board, idx int, color Piece) []int {
             res = append(res, sq)
         }
     }
-    if board.hasPieceOnIdx(left) && !board.hasColorPieceOnIdx(left, color) {
+    leftRank := getRankForIdx(left)
+    rightRank := getRankForIdx(right)
+    if board.hasPieceOnIdx(left) && !board.hasColorPieceOnIdx(left, color) && rank == leftRank {
         res = append(res, left)
     }
-    if board.hasPieceOnIdx(right) && !board.hasColorPieceOnIdx(right, color) {
+    if board.hasPieceOnIdx(right) && !board.hasColorPieceOnIdx(right, color) && rank == rightRank {
         res = append(res, right)
     }
 	return res
@@ -251,10 +254,10 @@ func GetKingMoves(board Board, idx int, color Piece, castleRights *CastleRights)
 		}
 	} else {
 		if castleRights.BlackKing && board[5] == None && board[6] == None {
-			res = append(res, 2)
+			res = append(res, 6)
 		}
 		if castleRights.BlackQueen && board[3] == None && board[2] == None && board[1] == None {
-			res = append(res, 6)
+			res = append(res, 2)
 		}
 	}
 	return res
