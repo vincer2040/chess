@@ -6,6 +6,15 @@ import (
 	"github.com/vincer2040/chess/internal/types"
 )
 
+type DisabledCastleDirection int
+
+const (
+	WhiteCastleKing DisabledCastleDirection = iota
+	WhiteCastleQueen
+	BlackCastleKing
+	BlackCastleQueen
+)
+
 type Game struct {
 	board        Board
 	trackedMoves []TrackedMove
@@ -40,15 +49,20 @@ func (g *Game) MakeMove(move *types.Move) {
 	g.board[move.To] = movedPiece
 	g.board[move.From] = None
 
-	if trackedMove.IsCastle() {
+	if trackedMove.isCastle() {
 		g.castle(move)
 	}
 
-	if trackedMove.IsEnPassant() {
+	disablesCastle, disabledCastleDirectoins := trackedMove.disablesCastle(&g.castleRights)
+	if disablesCastle {
+		g.disableCastle(disabledCastleDirectoins)
+	}
+
+	if trackedMove.isEnPassant() {
 		g.board[g.enPassant] = None
 	}
 
-	if trackedMove.IsDoublePawnPush() {
+	if trackedMove.isDoublePawnPush() {
 		g.enPassant = move.To
 	} else {
 		g.enPassant = -1
@@ -70,6 +84,25 @@ func (g *Game) GetLegalMoves() LegalMoves {
 
 func (g *Game) PrintBoard() {
 	g.board.print()
+}
+
+func (g *Game) disableCastle(directions []DisabledCastleDirection) {
+	for _, dir := range directions {
+		switch dir {
+		case WhiteCastleKing:
+			g.castleRights.WhiteKing = false
+			break
+		case WhiteCastleQueen:
+			g.castleRights.WhiteQueen = false
+			break
+		case BlackCastleKing:
+			g.castleRights.BlackKing = false
+			break
+		case BlackCastleQueen:
+			g.castleRights.BlackQueen = false
+			break
+		}
+	}
 }
 
 func (g *Game) castle(move *types.Move) {
