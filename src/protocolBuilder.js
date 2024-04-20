@@ -1,9 +1,10 @@
 const POSITION_BYTE = 43 // +
 const MOVE_BYTE = 36 // $
-const MOVE_SEPERATOR = 58 // :
+const SEPARATOR = 58 // :
 const RET_CAR = 13 // \r
 const NEW_LINE = 10 // \n
 const COMMAND_BYTE = 35 // #
+const PROMOTION_BYTE = 33; // !
 
 export class Builder {
     /** @type {ArrayBuffer} */
@@ -69,7 +70,7 @@ export class Builder {
         if (this.#len == this.#capacity) {
             this.#resize();
         }
-        this.#view[this.#len] = MOVE_SEPERATOR;
+        this.#view[this.#len] = SEPARATOR;
         this.#len++;
 
         const toString = move.to.toString();
@@ -80,6 +81,48 @@ export class Builder {
             this.#view[this.#len] = toString.charCodeAt(i);
             this.#len++;
         }
+        this.#addEnd();
+        return this;
+    }
+
+    /**
+     * @param {import("./types").Promotion} promotion
+     * @returns {Builder}
+     */
+    addPromotion(promotion) {
+        if (this.#len === this.#capacity) {
+            this.#resize();
+        }
+        this.#view[this.#len] = PROMOTION_BYTE;
+        this.#len++;
+        const fromString = promotion.from.toString();
+        for (let i = 0; i < fromString.length; ++i) {
+            if (this.#len === this.#capacity) {
+                this.#resize();
+            }
+            this.#view[this.#len] = fromString.charCodeAt(i);
+            this.#len++;
+        }
+        if (this.#len == this.#capacity) {
+            this.#resize();
+        }
+        this.#view[this.#len] = SEPARATOR;
+        this.#len++;
+        const toString = promotion.to.toString();
+        for (let i = 0; i < toString.length; ++i) {
+            if (this.#len == this.#capacity) {
+                this.#resize();
+            }
+            this.#view[this.#len] = toString.charCodeAt(i);
+            this.#len++;
+        }
+        this.#view[this.#len] = SEPARATOR;
+        this.#len++;
+        if (this.#len == this.#capacity) {
+            this.#resize();
+        }
+        this.#view[this.#len] = promotion.promoteTo.charCodeAt(0);
+        this.#len++;
         this.#addEnd();
         return this;
     }

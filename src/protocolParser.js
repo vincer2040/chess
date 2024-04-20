@@ -9,6 +9,7 @@ const ERROR_BYTE = 45; // -
 const COMMAND_BYTE = 35; // #
 const LEGAL_MOVES = 126; // ~
 const ARRAY_BYTE = 42; // *
+const PROMOTION_BYTE = 33; // !
 const ZERO_BYTE = 48; // 0
 
 export class Parser {
@@ -70,6 +71,12 @@ export class Parser {
                     type = DataTypes.LegalMoves;
                 }
                 break
+            case PROMOTION_BYTE:
+                data = this.#parsePromotion();
+                if (data !== null) {
+                    type = DataTypes.Promotion;
+                }
+                break
         }
         return { type, data};
     }
@@ -95,6 +102,32 @@ export class Parser {
             return null;
         }
         return { from: parseInt(from), to: parseInt(to) };
+    }
+
+    /**
+     * @returns {import("./types").Promotion | null}
+     */
+    #parsePromotion() {
+        this.#readByte()
+        let from = "";
+        let to = "";
+        let promoteTo = "";
+        while (this.#byte !== SEPARATOR && this.#byte !== 0) {
+            from += String.fromCharCode(this.#byte);
+            this.#readByte();
+        }
+        this.#readByte();
+        while (this.#byte !== SEPARATOR && this.#byte !== 0) {
+            to += String.fromCharCode(this.#byte);
+            this.#readByte();
+        }
+        this.#readByte();
+        promoteTo = String.fromCharCode(this.#byte);
+        this.#readByte();
+        if (!this.#expectEnd()) {
+            return null;
+        }
+        return { from: parseInt(from), to: parseInt(to), promoteTo };
     }
 
     /**
