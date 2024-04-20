@@ -71,6 +71,37 @@ func (b Builder) AddMove(move *types.Move) Builder {
 	return b.addEnd()
 }
 
+func (b Builder) AddPromotion(promotion *types.Promotion) Builder {
+	from := strconv.Itoa(promotion.From)
+	to := strconv.Itoa(promotion.To)
+	var promoteTo byte
+	switch promotion.PromoteTo {
+	case types.KnightPromotion:
+		promoteTo = 'n'
+		break
+	case types.BishopPromotion:
+		promoteTo = 'b'
+		break
+	case types.RookPromotion:
+		promoteTo = 'r'
+		break
+	case types.QueenPromotion:
+		promoteTo = 'q'
+		break
+	}
+	b = append(b, PROMOTION_BYTE)
+	for _, ch := range from {
+		b = append(b, byte(ch))
+	}
+	b = append(b, SEPARATOR)
+	for _, ch := range to {
+		b = append(b, byte(ch))
+	}
+	b = append(b, SEPARATOR)
+	b = append(b, promoteTo)
+	return b.addEnd()
+}
+
 func (b Builder) AddCommand(command string) Builder {
 	b = append(b, COMMAND_BYTE)
 	for _, ch := range command {

@@ -3,17 +3,19 @@ package protocol
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/vincer2040/chess/internal/types"
 )
 
 const (
-	POSITION_BYTE = '+'
-	MOVE_BYTE     = '$'
-	COMMAND_BYTE  = '#'
-	SEPARATOR     = ':'
-	ERROR_BYTE    = '-'
+	POSITION_BYTE  = '+'
+	MOVE_BYTE      = '$'
+	COMMAND_BYTE   = '#'
+	SEPARATOR      = ':'
+	ERROR_BYTE     = '-'
+	PROMOTION_BYTE = '!'
 
 	// client should never contain these two:
 	LEGAL_MOVES_BYTE = '~'
@@ -120,6 +122,60 @@ func (p *Parser) parseMove() (types.Move, error) {
 	return types.Move{
 		From: from,
 		To:   to,
+	}, nil
+}
+
+func (p *Parser) parsePromotion() (types.Promotion, error) {
+	p.readByte()
+	fromBuf := bytes.NewBufferString("")
+	toBuf := bytes.NewBufferString("")
+	var promoteToByte byte
+	for p.ch != SEPARATOR && p.ch != 0 {
+		fromBuf.WriteByte(p.ch)
+		p.readByte()
+	}
+	p.readByte()
+	for p.ch != SEPARATOR && p.ch != 0 {
+		toBuf.WriteByte(p.ch)
+		p.readByte()
+	}
+	p.readByte()
+	promoteToByte = p.ch
+	p.readByte()
+	if !p.expectEnd() {
+		return types.Promotion{}, errors.New("expected end")
+	}
+	from, err := strconv.Atoi(fromBuf.String())
+	if err != nil {
+		return types.Promotion{}, err
+	}
+	to, err := strconv.Atoi(toBuf.String())
+	if err != nil {
+		return types.Promotion{}, err
+	}
+	var promoteTo types.PromotedTo
+	switch promoteToByte {
+	case 'n':
+		promoteTo = types.KnightPromotion
+		break
+	case 'b':
+		promoteTo = types.BishopPromotion
+		break
+	case 'r':
+		promoteTo = types.RookPromotion
+		break
+	case 'q':
+		promoteTo = types.QueenPromotion
+		break
+	default:
+		return types.Promotion{}, errors.New(fmt.Sprintf("unknown promote to, %c", promoteToByte))
+	}
+	return types.Promotion{
+		Move: types.Move{
+			From: from,
+			To:   to,
+		},
+		PromoteTo: promoteTo,
 	}, nil
 }
 
