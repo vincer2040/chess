@@ -1,4 +1,4 @@
-import { getFileFromIdx, getRankFromIdx, getSquare, getSquareIdx } from "./move";
+import { getFileFromIdx, getRankFromIdx, getSquareIdx } from "./move";
 import { Builder } from "./protocolBuilder";
 import { Parser } from "./protocolParser";
 import { DataTypes } from "./types";
@@ -27,12 +27,6 @@ export class Game {
     /** @type {string}*/
     #toMove;
 
-    /** @type import("./types").RankFile */
-    #moveFrom;
-
-    /** @type import("./types").RankFile */
-    #moveTo;
-
     /** @type {number}*/
     #moveFromIdx;
 
@@ -56,8 +50,6 @@ export class Game {
         const split = startingPosition.split(" ");
         this.#position = split[0];
         this.#toMove = split[1];
-        this.#moveFrom = { rank: 1, file: "a" }
-        this.#moveTo = { rank: 1, file: "a" }
         this.#moving = null;
         this.#fromSquare = null;
         this.#toSquare = null;
@@ -278,8 +270,6 @@ export class Game {
         this.#moving.style.top = `${e.clientY - 48}px`;
         this.#moving.style.left = `${e.clientX - 48}px`
 
-        this.#moveFrom = getSquare(this.#board, parent);
-
         this.#moveFromIdx = getSquareIdx(this.#board, parent);
 
         const pieceLegalMoves = this.#legalMoves.get(this.#moveFromIdx);
@@ -328,7 +318,6 @@ export class Game {
         this.#toSquare = /** @type {HTMLElement}*/(square);
         this.#toSquare.classList.replace("bg-sky-800", "bg-sky-400");
         this.#toSquare.classList.replace("bg-orange-100", "bg-sky-400");
-        this.#moveTo = getSquare(this.#board, square);
         this.#moveToIdx = getSquareIdx(this.#board, square);
 
         const legalMovesForPiece = this.#legalMoves.get(this.#moveFromIdx);
