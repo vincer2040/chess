@@ -22,7 +22,7 @@ type Game struct {
 	castleRights   CastleRights
 	enPassant      int
 	legalMoves     LegalMoves
-	attackingMoves LegalMoves
+	attackingMoves AttackingMoves
 }
 
 func New(fen string) Game {
@@ -78,15 +78,15 @@ func (g *Game) MakeMove(move *types.Move) {
 	}
 
 	g.trackedMoves = append(g.trackedMoves, trackedMove)
-	g.legalMoves = getLegalMoves(g.board, g.toMove, &g.castleRights, g.enPassant)
     g.attackingMoves = getAttackingMoves(g.board, g.toMove)
+	g.legalMoves = getLegalMoves(g.board, g.toMove, &g.castleRights, g.enPassant)
 }
 
 func (g *Game) GetLegalMoves() LegalMoves {
 	return g.legalMoves
 }
 
-func (g *Game) GetAttackingMoves() LegalMoves {
+func (g *Game) GetAttackingMoves() AttackingMoves {
     return g.attackingMoves
 }
 

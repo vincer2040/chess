@@ -5,6 +5,7 @@ import (
 )
 
 type LegalMoves map[int][]int
+type AttackingMoves map[int][][]int
 
 type Direction int
 
@@ -80,8 +81,8 @@ func getLegalMoves(board Board, toMove byte, castleRights *CastleRights, enPassa
 	return legalMoves
 }
 
-func getAttackingMoves(board Board, toMove byte) LegalMoves {
-	attackingMoves := make(LegalMoves)
+func getAttackingMoves(board Board, toMove byte) AttackingMoves {
+	attackingMoves := make(AttackingMoves)
 	for idx, pieceInfo := range board {
 		piece := pieceInfo & PIECEMASK
 		color := pieceInfo & COLORMASK
@@ -140,8 +141,8 @@ func getAttackingMoves(board Board, toMove byte) LegalMoves {
 	return attackingMoves
 }
 
-func getAttackingPawnMoves(board Board, idx int, color Piece) []int {
-	var res []int
+func getAttackingPawnMoves(board Board, idx int, color Piece) [][]int {
+	var res [][]int
 	var sign int
 	if color == White {
 		sign = -1
@@ -155,16 +156,16 @@ func getAttackingPawnMoves(board Board, idx int, color Piece) []int {
 	leftRank := getRankForIdx(left)
 	rightRank := getRankForIdx(right)
 	if board.hasPieceOnIdx(left) && !board.hasColorPieceOnIdx(left, color) && rank == leftRank {
-		res = append(res, left)
+		res = append(res, []int{left})
 	}
 	if board.hasPieceOnIdx(right) && !board.hasColorPieceOnIdx(right, color) && rank == rightRank {
-		res = append(res, right)
+		res = append(res, []int{right})
 	}
 	return res
 }
 
-func getAttackingKnightMoves(board Board, idx int, color Piece) []int {
-	var res []int
+func getAttackingKnightMoves(board Board, idx int, color Piece) [][]int {
+	var res [][]int
 	offsets := []struct {
 		x int
 		y int
@@ -189,15 +190,15 @@ func getAttackingKnightMoves(board Board, idx int, color Piece) []int {
 			continue
 		}
 		if board.hasPieceOnIdx(sq) && !board.hasColorPieceOnIdx(sq, color) {
-			res = append(res, sq)
+			res = append(res, []int{sq})
 			continue
 		}
 	}
 	return res
 }
 
-func getAttackingDiagonalMoves(board Board, idx int, color Piece) []int {
-	var res []int
+func getAttackingDiagonalMoves(board Board, idx int, color Piece) [][]int {
+	var res [][]int
 	offsets := []int{9, 7, -9, -7}
 	directions := []Direction{SouthEast, SouthWest, NorthWest, NorthEast}
 	for i, offset := range offsets {
@@ -227,14 +228,14 @@ func getAttackingDiagonalMoves(board Board, idx int, color Piece) []int {
 			sq = idx
 			continue
 		}
-		res = append(res, tmp...)
+		res = append(res, tmp)
 		sq = idx
 	}
 	return res
 }
 
-func getAttackingStraightMoves(board Board, idx int, color Piece) []int {
-	var res []int
+func getAttackingStraightMoves(board Board, idx int, color Piece) [][]int {
+	var res [][]int
 	offsets := []int{8, 1, -8, -1}
 	dirs := []Direction{South, East, North, West}
 	for i, offset := range offsets {
@@ -264,14 +265,14 @@ func getAttackingStraightMoves(board Board, idx int, color Piece) []int {
 			sq = idx
 			continue
 		}
-		res = append(res, tmp...)
+		res = append(res, tmp)
 		sq = idx
 	}
 	return res
 }
 
-func getAttackingKingMoves(board Board, idx int, color Piece) []int {
-	var res []int
+func getAttackingKingMoves(board Board, idx int, color Piece) [][]int {
+	var res [][]int
 	curRank := getRankForIdx(idx)
 	minIdx := getMinIdxForRank(curRank)
 	maxIdx := getMaxIdxForRank(curRank)
@@ -293,7 +294,7 @@ func getAttackingKingMoves(board Board, idx int, color Piece) []int {
 	}
 
     if len(tmp1) > 0 {
-        res = append(res, tmp1...)
+        res = append(res, tmp1)
     }
 
     var tmp2 []int
@@ -313,7 +314,7 @@ func getAttackingKingMoves(board Board, idx int, color Piece) []int {
 	}
 
     if len(tmp2) > 0 {
-        res = append(res, tmp2...)
+        res = append(res, tmp2)
     }
     return res
 }

@@ -57,7 +57,7 @@ func (b Builder) AddLegalMoves(legalMoves game.LegalMoves) Builder {
 	return b
 }
 
-func (b Builder) AddAttackingMoves(attackingMoves game.LegalMoves) Builder {
+func (b Builder) AddAttackingMoves(attackingMoves game.AttackingMoves) Builder {
 	b = append(b, ATTACKING_MOVES_BYTE)
 	amt := strconv.Itoa(len(attackingMoves))
 	for _, ch := range amt {
@@ -65,30 +65,43 @@ func (b Builder) AddAttackingMoves(attackingMoves game.LegalMoves) Builder {
 	}
 	b = b.addEnd()
 	for k, v := range attackingMoves {
-		// add the key
-		key := strconv.Itoa(k)
-		for _, ch := range key {
-			b = append(b, byte(ch))
-		}
-		b = b.addEnd()
-		// add the number of moves for this piece
-		b = append(b, ARRAY_BYTE)
-		l := strconv.Itoa(len(v))
-		for _, ch := range l {
-			b = append(b, byte(ch))
-		}
-		b = b.addEnd()
-		// add the moves
-		for i, idx := range v {
-			s := strconv.Itoa(idx)
-			for _, ch := range s {
-				b = append(b, byte(ch))
-			}
-			if i != len(v)-1 {
-				b = append(b, SEPARATOR)
-			}
-		}
-		b = b.addEnd()
+        // add key
+        key := strconv.Itoa(k)
+        for _, ch := range key {
+            b = append(b, byte(ch))
+        }
+        b = b.addEnd()
+
+        // add the number of moves this direction
+        b = append(b, ARRAY_BYTE)
+        ld := strconv.Itoa(len(v))
+        for _, ch := range ld {
+            b = append(b, byte(ch))
+        }
+        b = b.addEnd()
+
+        // add the moves
+        for _, moves := range v {
+            // add the number of moves
+            b = append(b, ARRAY_BYTE)
+            lm := strconv.Itoa(len(moves))
+            for _, ch := range lm {
+                b = append(b, byte(ch))
+            }
+            b = b.addEnd()
+
+            // add the actual moves
+            for i, idx := range moves {
+                s := strconv.Itoa(idx)
+                for _, ch := range s {
+                    b = append(b, byte(ch))
+                }
+                if i != len(v)-1 {
+                    b = append(b, SEPARATOR)
+                }
+            }
+            b = b.addEnd()
+        }
 	}
 	return b
 }

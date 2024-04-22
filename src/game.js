@@ -39,7 +39,7 @@ export class Game {
     /** @type {import("./types").LegalMoves} */
     #legalMoves;
 
-    /** @type {import("./types").LegalMoves} */
+    /** @type {import("./types").AttackingMoves} */
     #attackingMoves;
 
     /** @type {Queue<ArrayBuffer>}*/
@@ -113,7 +113,7 @@ export class Game {
                 this.#legalMoves = /** @type {import("./types").LegalMoves} */(data.data);
                 break
             case DataTypes.AttackingMoves:
-                this.#attackingMoves = /** @type {import("./types").LegalMoves} */(data.data);
+                this.#attackingMoves = /** @type {import("./types").AttackingMoves} */(data.data);
                 this.#showAttackingMoves();
                 break
             case DataTypes.Move:
@@ -184,15 +184,17 @@ export class Game {
     }
 
     #showAttackingMoves() {
-        for (let [_, value] of this.#attackingMoves) {
-            for (let idx of value) {
-                const rank = getRankFromIdx(idx);
-                const file = getFileFromIdx(idx);
-                const square = this.#board.children.item(rank)?.children.item(file);
-                if ((file + rank) % 2 === 0) {
-                    square?.classList.replace("bg-orange-100", "bg-green-500");
-                } else {
-                    square?.classList.replace("bg-sky-800", "bg-green-500");
+        for (const [_, value] of this.#attackingMoves) {
+            for (const dir of value) {
+                for (const idx of dir) {
+                    const rank = getRankFromIdx(idx);
+                    const file = getFileFromIdx(idx);
+                    const square = this.#board.children.item(rank)?.children.item(file);
+                    if ((file + rank) % 2 === 0) {
+                        square?.classList.replace("bg-orange-100", "bg-green-500");
+                    } else {
+                        square?.classList.replace("bg-sky-800", "bg-green-500");
+                    }
                 }
             }
         }

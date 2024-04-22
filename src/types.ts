@@ -21,8 +21,9 @@ export const DataTypes = {
 export type DataType = typeof DataTypes[keyof typeof DataTypes];
 
 export type LegalMoves = Map<number, number[]>;
+export type AttackingMoves = Map<number, number[][]>;
 
 export type DataFromServer = {
     type: DataType,
-    data: LegalMoves | string | Move | Promotion | null;
+    data: LegalMoves | AttackingMoves | string | Move | Promotion | null;
 }

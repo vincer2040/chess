@@ -37,7 +37,7 @@ export class Parser {
      * @returns {import("./types").DataFromServer}
      */
     parse() {
-        /** @type {import("./types").LegalMoves | import("./types").Move | string | null} */
+        /** @type {import("./types").LegalMoves | import("./types").AttackingMoves | import("./types").Move | string | null} */
         let data = null;
         /** @type {import("./types").DataType} */
         let type = DataTypes.Illegal;
@@ -251,10 +251,10 @@ export class Parser {
     }
 
     /**
-     * @returns {import("./types").LegalMoves | null}
+     * @returns {import("./types").AttackingMoves | null}
      */
     #parseAttackingMoves() {
-        /** @type {import("./types").LegalMoves}*/
+        /** @type {import("./types").AttackingMoves}*/
         const res = new Map();
         this.#readByte();
         let len = 0;
@@ -279,38 +279,51 @@ export class Parser {
                 return null;
             }
             this.#readByte();
-            let numMoves = 0;
+            let numDirections = 0;
             while (this.#byte !== RET_CAR && this.#byte !== 0) {
-                numMoves = (numMoves * 10) + (this.#byte - ZERO_BYTE);
+                numDirections = (numDirections * 10) + (this.#byte - ZERO_BYTE);
                 this.#readByte();
             }
             if (!this.#expectEnd()) {
                 return null;
             }
-            this.#readByte();
-            /** @type {number[]}*/
-            let moves = [];
-            while (this.#byte !== RET_CAR && this.#byte !== 0) {
-                let move = 0;
-                // @ts-ignore:
-                while (this.#byte !== SEPARATOR && this.#byte != RET_CAR && this.#byte !== 0) {
-                    move = (move * 10) + (this.#byte - ZERO_BYTE);
+            /** @type {number[][]}*/
+            let allMoves = [];
+            for (let j = 0; j < numDirections; ++j) {
+                if (!this.#expectPeek(ARRAY_BYTE)) {
+                    return null;
+                }
+                this.#readByte();
+                let numMoves = 0;
+                while (this.#byte !== RET_CAR && this.#byte !== 0) {
+                    numMoves = (numMoves * 10) + (this.#byte - ZERO_BYTE);
                     this.#readByte();
                 }
-                moves.push(move);
-                // @ts-ignore:
-                if (this.#byte === SEPARATOR) {
-                    this.#readByte();
+                if (!this.#expectEnd()) {
+                    return null;
                 }
+                this.#readByte();
+                /** @type {number[]}*/
+                let moves = [];
+                for (let k = 0; k < numMoves; ++k) {
+                    let move = 0;
+                    // @ts-ignore:
+                    while (this.#byte !== SEPARATOR && this.#byte != RET_CAR && this.#byte !== 0) {
+                        move = (move * 10) + (this.#byte - ZERO_BYTE);
+                        this.#readByte();
+                    }
+                    moves.push(move);
+                    if (k !== (numMoves - 1)) {
+                        this.#readByte();
+                    }
+                }
+                if (!this.#expectEnd()) {
+                    return null;
+                }
+                this.#readByte();
+                allMoves.push(moves);
             }
-            if (!this.#expectEnd()) {
-                return null;
-            }
-            if (moves.length !== numMoves) {
-                return null;
-            }
-            this.#readByte();
-            res.set(key, moves);
+            res.set(key, allMoves);
         }
         return res;
     }
