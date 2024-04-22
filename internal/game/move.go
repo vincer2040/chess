@@ -131,13 +131,6 @@ func getAttackingMoves(board Board, toMove byte) AttackingMoves {
 			}
 			attackingMoves[idx] = moves
 			break
-		case King:
-			moves := getAttackingKingMoves(board, idx, color)
-			if len(moves) == 0 {
-				break
-			}
-			attackingMoves[idx] = moves
-			break
 		}
 	}
 	return attackingMoves
@@ -269,54 +262,6 @@ func getAttackingStraightMoves(board Board, idx int, color Piece) [][]int {
 		}
 		res = append(res, tmp)
 		sq = idx
-	}
-	return res
-}
-
-func getAttackingKingMoves(board Board, idx int, color Piece) [][]int {
-	var res [][]int
-	curRank := getRankForIdx(idx)
-	minIdx := getMinIdxForRank(curRank)
-	maxIdx := getMaxIdxForRank(curRank)
-	straightOffsets := []int{8, 1, -1, -8}
-	diagOffsets := []int{7, 9, -7, -9}
-	var tmp1 []int
-	for _, offset := range straightOffsets {
-		sq := idx + offset
-		if sq >= 64 || sq < 0 {
-			continue
-		}
-		if int(math.Abs(float64(offset))) == 1 && (sq < minIdx || sq > maxIdx) {
-			continue
-		}
-		if board.hasPieceOnIdx(sq) && !board.hasColorPieceOnIdx(sq, color) {
-			tmp1 = append(tmp1, sq)
-			continue
-		}
-	}
-
-	if len(tmp1) > 0 {
-		res = append(res, tmp1)
-	}
-
-	var tmp2 []int
-	for _, offset := range diagOffsets {
-		sq := idx + offset
-		if sq > 64 || sq < 0 {
-			continue
-		}
-		rank := getRankForIdx(sq)
-		if rank != (curRank-1) && rank != (curRank+1) {
-			continue
-		}
-		if board.hasPieceOnIdx(sq) && !board.hasColorPieceOnIdx(sq, color) {
-			tmp2 = append(tmp2, sq)
-			continue
-		}
-	}
-
-	if len(tmp2) > 0 {
-		res = append(res, tmp2)
 	}
 	return res
 }
