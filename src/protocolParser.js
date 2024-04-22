@@ -292,7 +292,6 @@ export class Parser {
                 if (!this.#expectEnd()) {
                     return null;
                 }
-                this.#readByte();
                 allMoves.push(moves);
             }
             res.set(key, allMoves);
