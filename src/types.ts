@@ -14,6 +14,7 @@ export const DataTypes = {
     Error: "error",
     Command: "command",
     LegalMoves: "legal moves",
+    AttackingMoves: "attacking moves",
     Promotion: "promotion",
 } as const;
 

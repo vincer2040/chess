@@ -39,6 +39,9 @@ export class Game {
     /** @type {import("./types").LegalMoves} */
     #legalMoves;
 
+    /** @type {import("./types").LegalMoves} */
+    #attackingMoves;
+
     /** @type {Queue<ArrayBuffer>}*/
     #messageQueue;
 
@@ -57,6 +60,7 @@ export class Game {
         this.#moveToIdx = -1;
         this.#board = /** @type {HTMLElement} */(document.getElementById("board"));
         this.#legalMoves = new Map();
+        this.#attackingMoves = new Map();
         this.#ws = ws;
         this.#ws.addEventListener("message", Game.#handleMessageCallback);
         this.#messageQueue = new Queue();
@@ -65,6 +69,8 @@ export class Game {
         this.#messageQueue.enque(s);
         let lm = new Builder().addCommand("LEGAL_MOVES").getBuf();
         this.#messageQueue.enque(lm);
+        let am = new Builder().addCommand("ATTACKING_MOVES").getBuf();
+        this.#messageQueue.enque(am);
         this.#ws.addEventListener("open", () => {
             const start = this.#messageQueue.deque();
             if (start === null) {
@@ -106,6 +112,10 @@ export class Game {
             case DataTypes.LegalMoves:
                 this.#legalMoves = /** @type {import("./types").LegalMoves} */(data.data);
                 break
+            case DataTypes.AttackingMoves:
+                this.#attackingMoves = /** @type {import("./types").LegalMoves} */(data.data);
+                this.#showAttackingMoves();
+                break
             case DataTypes.Move:
                 break
         }
@@ -123,6 +133,20 @@ export class Game {
         this.#ws.send(m);
         const lm = new Builder().addCommand("LEGAL_MOVES").getBuf();
         this.#messageQueue.enque(lm);
+        const am = new Builder().addCommand("ATTACKING_MOVES").getBuf();
+        this.#messageQueue.enque(am);
+    }
+
+    /**
+     * @param {import("./types").Promotion} promotion
+     */
+    #emitPromotion(promotion) {
+        let m = new Builder().addPromotion(promotion).getBuf();
+        this.#ws.send(m);
+        const lm = new Builder().addCommand("LEGAL_MOVES").getBuf();
+        this.#messageQueue.enque(lm);
+        const am = new Builder().addCommand("ATTACKING_MOVES").getBuf();
+        this.#messageQueue.enque(am);
     }
 
     #resetBoardColors() {
@@ -159,6 +183,34 @@ export class Game {
         }
     }
 
+    #showAttackingMoves() {
+        for (let [_, value] of this.#attackingMoves) {
+            for (let idx of value) {
+                const rank = getRankFromIdx(idx);
+                const file = getFileFromIdx(idx);
+                const square = this.#board.children.item(rank)?.children.item(file);
+                if ((file + rank) % 2 === 0) {
+                    square?.classList.replace("bg-orange-100", "bg-green-500");
+                } else {
+                    square?.classList.replace("bg-sky-800", "bg-green-500");
+                }
+            }
+        }
+    }
+
+    #resetBoardColorsFromShowAttackingMoves() {
+        for (let rank = 0; rank < 8; ++rank) {
+            for (let file = 0; file < 8; ++file) {
+                const square = this.#board.children.item(rank)?.children.item(file);
+                if ((file + rank) % 2 === 0) {
+                    square?.classList.replace("bg-green-500", "bg-orange-100");
+                } else {
+                    square?.classList.replace("bg-green-500", "bg-sky-800");
+                }
+            }
+        }
+    }
+
     /**
      * @param {import("./types").Move} move
      * @returns {boolean}
@@ -171,6 +223,22 @@ export class Game {
         }
         const amtMoved = Math.abs(move.to - move.from);
         return amtMoved === 2;
+    }
+
+    /**
+     * @param {import("./types").Move} move
+     * @returns {boolean}
+     */
+    #isPromotion(move) {
+        // @ts-ignore:
+        const piece = getPieceFromUrl(this.#moving.src.replace("http://localhost:8080", ""));
+        if (piece !== "P" && piece !== "p") {
+            return false
+        }
+        if (piece === 'P') {
+            return move.to >= 0 && move.to <= 7;
+        }
+        return move.to >= 56 && move.to <= 63;
     }
 
     /**
@@ -361,6 +429,7 @@ export class Game {
         this.#fromSquare = null;
         this.#toSquare = null;
         this.#emitMove(move);
+        this.#resetBoardColorsFromShowAttackingMoves();
     }
 
     /**

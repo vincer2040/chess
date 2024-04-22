@@ -8,6 +8,7 @@ const NEW_LINE = 10; // \n
 const ERROR_BYTE = 45; // -
 const COMMAND_BYTE = 35; // #
 const LEGAL_MOVES = 126; // ~
+const ATTACKING_MOVES = 94; // ^
 const ARRAY_BYTE = 42; // *
 const PROMOTION_BYTE = 33; // !
 const ZERO_BYTE = 48; // 0
@@ -71,6 +72,12 @@ export class Parser {
                     type = DataTypes.LegalMoves;
                 }
                 break
+            case ATTACKING_MOVES:
+                data = this.#parseAttackingMoves();
+                if (data !== null) {
+                    type = DataTypes.AttackingMoves;
+                }
+                break
             case PROMOTION_BYTE:
                 data = this.#parsePromotion();
                 if (data !== null) {
@@ -78,7 +85,7 @@ export class Parser {
                 }
                 break
         }
-        return { type, data};
+        return { type, data };
     }
 
     /**
@@ -182,6 +189,71 @@ export class Parser {
      * @returns {import("./types").LegalMoves | null}
      */
     #parseLegalMoves() {
+        /** @type {import("./types").LegalMoves}*/
+        const res = new Map();
+        this.#readByte();
+        let len = 0;
+        while (this.#byte !== RET_CAR && this.#byte !== 0) {
+            len = (len * 10) + (this.#byte - ZERO_BYTE);
+            this.#readByte();
+        }
+        if (!this.#expectEnd()) {
+            return null;
+        }
+        this.#readByte();
+        for (let i = 0; i < len; ++i) {
+            let key = 0;
+            while (this.#byte !== RET_CAR && this.#byte !== 0) {
+                key = (key * 10) + (this.#byte - ZERO_BYTE);
+                this.#readByte();
+            }
+            if (!this.#expectEnd()) {
+                return null;
+            }
+            if (!this.#expectPeek(ARRAY_BYTE)) {
+                return null;
+            }
+            this.#readByte();
+            let numMoves = 0;
+            while (this.#byte !== RET_CAR && this.#byte !== 0) {
+                numMoves = (numMoves * 10) + (this.#byte - ZERO_BYTE);
+                this.#readByte();
+            }
+            if (!this.#expectEnd()) {
+                return null;
+            }
+            this.#readByte();
+            /** @type {number[]}*/
+            let moves = [];
+            while (this.#byte !== RET_CAR && this.#byte !== 0) {
+                let move = 0;
+                // @ts-ignore:
+                while (this.#byte !== SEPARATOR && this.#byte != RET_CAR && this.#byte !== 0) {
+                    move = (move * 10) + (this.#byte - ZERO_BYTE);
+                    this.#readByte();
+                }
+                moves.push(move);
+                // @ts-ignore:
+                if (this.#byte === SEPARATOR) {
+                    this.#readByte();
+                }
+            }
+            if (!this.#expectEnd()) {
+                return null;
+            }
+            if (moves.length !== numMoves) {
+                return null;
+            }
+            this.#readByte();
+            res.set(key, moves);
+        }
+        return res;
+    }
+
+    /**
+     * @returns {import("./types").LegalMoves | null}
+     */
+    #parseAttackingMoves() {
         /** @type {import("./types").LegalMoves}*/
         const res = new Map();
         this.#readByte();
