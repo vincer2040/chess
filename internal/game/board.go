@@ -38,6 +38,14 @@ func newBoard(pos string) Board {
 	return res
 }
 
+func (b Board) copy() Board {
+    var c Board
+    for _, x := range b {
+        c = append(c, x)
+    }
+    return c
+}
+
 func (b Board) print() {
 	for i := 0; i < 8; i++ {
 		for j := 0; j < 8; j++ {
