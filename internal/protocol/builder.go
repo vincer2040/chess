@@ -57,6 +57,42 @@ func (b Builder) AddLegalMoves(legalMoves game.LegalMoves) Builder {
 	return b
 }
 
+func (b Builder) AddAttackingMoves(attackingMoves game.LegalMoves) Builder {
+	b = append(b, ATTACKING_MOVES_BYTE)
+	amt := strconv.Itoa(len(attackingMoves))
+	for _, ch := range amt {
+		b = append(b, byte(ch))
+	}
+	b = b.addEnd()
+	for k, v := range attackingMoves {
+		// add the key
+		key := strconv.Itoa(k)
+		for _, ch := range key {
+			b = append(b, byte(ch))
+		}
+		b = b.addEnd()
+		// add the number of moves for this piece
+		b = append(b, ARRAY_BYTE)
+		l := strconv.Itoa(len(v))
+		for _, ch := range l {
+			b = append(b, byte(ch))
+		}
+		b = b.addEnd()
+		// add the moves
+		for i, idx := range v {
+			s := strconv.Itoa(idx)
+			for _, ch := range s {
+				b = append(b, byte(ch))
+			}
+			if i != len(v)-1 {
+				b = append(b, SEPARATOR)
+			}
+		}
+		b = b.addEnd()
+	}
+	return b
+}
+
 func (b Builder) AddMove(move *types.Move) Builder {
 	from := strconv.Itoa(move.From)
 	to := strconv.Itoa(move.To)

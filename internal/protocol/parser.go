@@ -18,8 +18,9 @@ const (
 	PROMOTION_BYTE = '!'
 
 	// client should never contain these two:
-	LEGAL_MOVES_BYTE = '~'
-	ARRAY_BYTE       = '*'
+	LEGAL_MOVES_BYTE     = '~'
+	ATTACKING_MOVES_BYTE = '^'
+	ARRAY_BYTE           = '*'
 )
 
 type Parser struct {
