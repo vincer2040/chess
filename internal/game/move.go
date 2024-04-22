@@ -69,14 +69,253 @@ func getLegalMoves(board Board, toMove byte, castleRights *CastleRights, enPassa
 			legalMoves[idx] = moves
 			break
 		case King:
-			moves := GetKingMoves(board, idx, color, castleRights)
+			moves := getKingMoves(board, idx, color, castleRights)
 			if len(moves) == 0 {
 				break
 			}
 			legalMoves[idx] = moves
+			break
 		}
 	}
 	return legalMoves
+}
+
+func getAttackingMoves(board Board, toMove byte) LegalMoves {
+	attackingMoves := make(LegalMoves)
+	for idx, pieceInfo := range board {
+		piece := pieceInfo & PIECEMASK
+		color := pieceInfo & COLORMASK
+		if toMove == 'w' && color == White {
+			continue
+		}
+		if toMove == 'b' && color == Black {
+			continue
+		}
+		switch piece {
+		case Pawn:
+			moves := getAttackingPawnMoves(board, idx, color)
+			if len(moves) == 0 {
+				break
+			}
+			attackingMoves[idx] = moves
+			break
+		case Knight:
+			moves := getAttackingKnightMoves(board, idx, color)
+			if len(moves) == 0 {
+				break
+			}
+			attackingMoves[idx] = moves
+			break
+		case Bishop:
+			moves := getAttackingDiagonalMoves(board, idx, color)
+			if len(moves) == 0 {
+				break
+			}
+			attackingMoves[idx] = moves
+			break
+		case Rook:
+			moves := getAttackingStraightMoves(board, idx, color)
+			if len(moves) == 0 {
+				break
+			}
+			attackingMoves[idx] = moves
+			break
+        case Queen:
+            moves := getAttackingDiagonalMoves(board, idx, color)
+            moves = append(moves, getAttackingStraightMoves(board, idx, color)...)
+            if len(moves) == 0 {
+                break
+            }
+            attackingMoves[idx] = moves
+            break
+        case King:
+            moves := getAttackingKingMoves(board, idx, color)
+            if len(moves) == 0 {
+                break
+            }
+            attackingMoves[idx] = moves
+            break
+		}
+	}
+	return attackingMoves
+}
+
+func getAttackingPawnMoves(board Board, idx int, color Piece) []int {
+	var res []int
+	var sign int
+	if color == White {
+		sign = -1
+	} else {
+		sign = 1
+	}
+	sq := idx + (8 * sign)
+	rank := getRankForIdx(sq)
+	left := sq - 1
+	right := sq + 1
+	leftRank := getRankForIdx(left)
+	rightRank := getRankForIdx(right)
+	if board.hasPieceOnIdx(left) && !board.hasColorPieceOnIdx(left, color) && rank == leftRank {
+		res = append(res, left)
+	}
+	if board.hasPieceOnIdx(right) && !board.hasColorPieceOnIdx(right, color) && rank == rightRank {
+		res = append(res, right)
+	}
+	return res
+}
+
+func getAttackingKnightMoves(board Board, idx int, color Piece) []int {
+	var res []int
+	offsets := []struct {
+		x int
+		y int
+	}{
+		{x: 1, y: 16},
+		{x: -1, y: 16},
+		{x: 2, y: 8},
+		{x: -2, y: 8},
+		{x: 1, y: -16},
+		{x: -1, y: -16},
+		{x: 2, y: -8},
+		{x: -2, y: -8},
+	}
+	for _, offset := range offsets {
+		sq := idx + offset.y
+		if sq >= 64 || sq < 0 {
+			continue
+		}
+		rank := getRankForIdx(sq)
+		sq += offset.x
+		if sq < getMinIdxForRank(rank) || sq > getMaxIdxForRank(rank) {
+			continue
+		}
+		if board.hasPieceOnIdx(sq) && !board.hasColorPieceOnIdx(sq, color) {
+			res = append(res, sq)
+			continue
+		}
+	}
+	return res
+}
+
+func getAttackingDiagonalMoves(board Board, idx int, color Piece) []int {
+	var res []int
+	offsets := []int{9, 7, -9, -7}
+	directions := []Direction{SouthEast, SouthWest, NorthWest, NorthEast}
+	for i, offset := range offsets {
+		dir := directions[i]
+		n := getMaxToEdge(idx, dir)
+		sq := idx + offset
+		var tmp []int
+		for j := 0; j < n; j++ {
+			if !board.hasPieceOnIdx(sq) {
+				tmp = append(tmp, sq)
+				sq += offset
+				continue
+			}
+			if !board.hasColorPieceOnIdx(sq, color) {
+				tmp = append(tmp, sq)
+				break
+			}
+			break
+		}
+		tmpLen := len(tmp)
+		if tmpLen == 0 {
+			sq = idx
+			continue
+		}
+		lastChecked := tmp[tmpLen-1]
+		if !board.hasPieceOnIdx(lastChecked) {
+			sq = idx
+			continue
+		}
+		res = append(res, tmp...)
+		sq = idx
+	}
+	return res
+}
+
+func getAttackingStraightMoves(board Board, idx int, color Piece) []int {
+	var res []int
+	offsets := []int{8, 1, -8, -1}
+	dirs := []Direction{South, East, North, West}
+	for i, offset := range offsets {
+		dir := dirs[i]
+		n := getMaxToEdge(idx, dir)
+		sq := idx + offset
+		var tmp []int
+		for j := 0; j < n; j++ {
+			if !board.hasPieceOnIdx(sq) {
+				tmp = append(tmp, sq)
+				sq += offset
+				continue
+			}
+			if !board.hasColorPieceOnIdx(sq, color) {
+				tmp = append(tmp, sq)
+				break
+			}
+			break
+		}
+		tmpLen := len(tmp)
+		if tmpLen == 0 {
+			sq = idx
+			continue
+		}
+		lastChecked := tmp[tmpLen-1]
+		if !board.hasPieceOnIdx(lastChecked) {
+			sq = idx
+			continue
+		}
+		res = append(res, tmp...)
+		sq = idx
+	}
+	return res
+}
+
+func getAttackingKingMoves(board Board, idx int, color Piece) []int {
+	var res []int
+	curRank := getRankForIdx(idx)
+	minIdx := getMinIdxForRank(curRank)
+	maxIdx := getMaxIdxForRank(curRank)
+	straightOffsets := []int{8, 1, -1, -8}
+	diagOffsets := []int{7, 9, -7, -9}
+    var tmp1 []int
+	for _, offset := range straightOffsets {
+		sq := idx + offset
+		if sq >= 64 || sq < 0 {
+			continue
+		}
+		if int(math.Abs(float64(offset))) == 1 && (sq < minIdx || sq > maxIdx) {
+			continue
+		}
+		if board.hasPieceOnIdx(sq) && !board.hasColorPieceOnIdx(sq, color) {
+			tmp1 = append(tmp1, sq)
+			continue
+		}
+	}
+
+    if len(tmp1) > 0 {
+        res = append(res, tmp1...)
+    }
+
+    var tmp2 []int
+	for _, offset := range diagOffsets {
+		sq := idx + offset
+		if sq > 64 || sq < 0 {
+			continue
+		}
+		rank := getRankForIdx(sq)
+		if rank != (curRank-1) && rank != (curRank+1) {
+			continue
+		}
+		if board.hasPieceOnIdx(sq) && !board.hasColorPieceOnIdx(sq, color) {
+			tmp2 = append(tmp2, sq)
+			continue
+		}
+	}
+
+    if len(tmp2) > 0 {
+        res = append(res, tmp2...)
+    }
+    return res
 }
 
 func getPawnMoves(board Board, idx int, color Piece, enPassant int) []int {
@@ -226,7 +465,7 @@ func getKnightMoves(board Board, idx int, color Piece) []int {
 	return res
 }
 
-func GetKingMoves(board Board, idx int, color Piece, castleRights *CastleRights) []int {
+func getKingMoves(board Board, idx int, color Piece, castleRights *CastleRights) []int {
 	var res []int
 	curRank := getRankForIdx(idx)
 	minIdx := getMinIdxForRank(curRank)

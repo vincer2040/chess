@@ -16,12 +16,13 @@ const (
 )
 
 type Game struct {
-	board        Board
-	trackedMoves []TrackedMove
-	toMove       byte
-	castleRights CastleRights
-	enPassant    int
-	legalMoves   LegalMoves
+	board          Board
+	trackedMoves   []TrackedMove
+	toMove         byte
+	castleRights   CastleRights
+	enPassant      int
+	legalMoves     LegalMoves
+	attackingMoves LegalMoves
 }
 
 func New(fen string) Game {
@@ -37,8 +38,10 @@ func New(fen string) Game {
 		castleRights: newCastleRights(castleRights),
 		enPassant:    -1,
 		legalMoves:   nil,
+        attackingMoves: nil,
 	}
 	g.legalMoves = getLegalMoves(g.board, g.toMove, &g.castleRights, g.enPassant)
+    g.attackingMoves = getAttackingMoves(g.board, g.toMove)
 	return g
 }
 
@@ -76,6 +79,7 @@ func (g *Game) MakeMove(move *types.Move) {
 
 	g.trackedMoves = append(g.trackedMoves, trackedMove)
 	g.legalMoves = getLegalMoves(g.board, g.toMove, &g.castleRights, g.enPassant)
+    g.attackingMoves = getAttackingMoves(g.board, g.toMove)
 }
 
 func (g *Game) GetLegalMoves() LegalMoves {
