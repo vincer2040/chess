@@ -86,6 +86,10 @@ func (g *Game) GetLegalMoves() LegalMoves {
 	return g.legalMoves
 }
 
+func (g *Game) GetAttackingMoves() LegalMoves {
+    return g.attackingMoves
+}
+
 func (g *Game) PrintBoard() {
 	g.board.print()
 }

@@ -64,6 +64,10 @@ func handleData(data *types.Data, game *game.Game) protocol.Builder {
 		case "START":
 			b = b.AddCommand("OK")
 			break
+		case "ATTACKING_MOVES":
+			attackingMoves := game.GetAttackingMoves()
+			b = b.AddAttackingMoves(attackingMoves)
+			break
 		default:
 			b = b.AddError(fmt.Sprintf("unknown command: %s", cmd))
 			break
