@@ -96,7 +96,7 @@ func (b Builder) AddAttackingMoves(attackingMoves game.AttackingMoves) Builder {
 				for _, ch := range s {
 					b = append(b, byte(ch))
 				}
-				if i != len(v)-1 {
+				if i != len(moves)-1 {
 					b = append(b, SEPARATOR)
 				}
 			}
