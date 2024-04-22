@@ -95,7 +95,7 @@ export class Game {
                 }
                 const url = /** @type {string}*/(getPieceUrl(p));
                 const piece = createPiece(url);
-                piece.addEventListener("mousedown", e => Game.#mouseDownCallback(e));
+                piece.addEventListener("mousedown", Game.#mouseDownCallback);
                 squareEl?.append(piece);
             }
         }
@@ -413,6 +413,7 @@ export class Game {
         };
 
         const iscastle = this.#isCastle(move);
+        const isPromotion = this.#isPromotion(move);
 
         if (!isCapture) {
             this.#toSquare.append(this.#moving);
@@ -425,6 +426,13 @@ export class Game {
             }
         } else {
             this.#toSquare.replaceChildren(this.#moving);
+        }
+
+        if (isPromotion) {
+            const url = this.#moving.src.replace("http://localhost:8080", "");
+            this.#onPromotion(pieceColor(/** @type {string}*/(getPieceFromUrl(url))));
+            this.#resetBoardColorsFromShowAttackingMoves();
+            return;
         }
 
         this.#moving = null;
@@ -472,6 +480,61 @@ export class Game {
     }
 
     /**
+     * @param {string} color
+     */
+    #onPromotion(color) {
+        /** @type {HTMLElement | null} */
+        let promotionBox;
+        /** @type {string[]} */
+        let ids;
+        if (color === "white") {
+            promotionBox = document.getElementById("white-promotion");
+            ids = ["Q", "R", "B", "N"];
+        } else {
+            promotionBox = document.getElementById("black-promotion");
+            ids = ["q", "r", "b", "n"];
+        }
+        promotionBox?.children.item(0)?.classList.replace("hidden", "flex");
+        ids.forEach((id) => {
+            let imgId = id + "-promotion";
+            const img = document.getElementById(imgId);
+            img?.addEventListener("click", Game.#onPromoteToCallback);
+        });
+    }
+
+    /**
+     * @param {MouseEvent} e
+     */
+    #onPromiteTo(e) {
+        e.preventDefault();
+        const target = /**@type {HTMLElement}*/(e.target);
+        const id = target.id;
+        const piece = id.replace("-promotion", "");
+        const img = createPiece(/** @type {string} */(getPieceUrl(piece)));
+        img.addEventListener("mousedown", Game.#mouseDownCallback);
+        this.#emitPromotion({from: this.#moveFromIdx, to: this.#moveToIdx, promoteTo: piece.toLowerCase()});
+        let promotionBox;
+        /** @type {string[]} */
+        let ids;
+        if (piece.toUpperCase() === piece) {
+            promotionBox = document.getElementById("white-promotion");
+            ids = ["Q", "R", "B", "N"];
+        } else {
+            promotionBox = document.getElementById("black-promotion");
+            ids = ["q", "r", "b", "n"];
+        }
+        promotionBox?.children.item(0)?.classList.replace("flex", "hidden");
+        ids.forEach((id) => {
+            const el = document.getElementById(id);
+            el?.removeEventListener("click", Game.#onPromoteToCallback);
+        });
+        this.#moving?.replaceWith(img);
+        this.#moving = null;
+        this.#fromSquare = null;
+        this.#toSquare = null;
+    }
+
+    /**
      * @param {MouseEvent} e
      */
     static #mouseMoveCallback(e) {
@@ -497,6 +560,13 @@ export class Game {
      */
     static #handleMessageCallback(e) {
         Game.#instance.#handleMessage(new TextEncoder().encode(e.data));
+    }
+
+    /**
+     * @param {MouseEvent} e
+     */
+    static #onPromoteToCallback(e) {
+        Game.#instance.#onPromiteTo(e);
     }
 }
 

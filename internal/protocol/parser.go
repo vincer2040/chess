@@ -66,6 +66,14 @@ func (p *Parser) Parse() types.Data {
 		res.Data = move
 		res.Type = types.MoveType
 		break
+    case PROMOTION_BYTE:
+        promotion, err := p.parsePromotion()
+        if err != nil {
+            break
+        }
+        res.Data = promotion
+        res.Type = types.PromotionType
+        break
 	}
 	return res
 }

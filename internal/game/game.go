@@ -48,7 +48,7 @@ func New(fen string) Game {
 func (g *Game) MakeMove(move *types.Move) {
 	movedPiece := g.board[move.From]
 	captured := g.board[move.To]
-	trackedMove := newTrackedMove(movedPiece, captured, move.From, move.To)
+	trackedMove := newTrackedMove(movedPiece, captured, move.From, move.To, false, None)
 	g.board[move.To] = movedPiece
 	g.board[move.From] = None
 
@@ -56,9 +56,9 @@ func (g *Game) MakeMove(move *types.Move) {
 		g.castle(move)
 	}
 
-	disablesCastle, disabledCastleDirectoins := trackedMove.disablesCastle(&g.castleRights)
+	disablesCastle, disabledCastleDirections := trackedMove.disablesCastle(&g.castleRights)
 	if disablesCastle {
-		g.disableCastle(disabledCastleDirectoins)
+		g.disableCastle(disabledCastleDirections)
 	}
 
 	if trackedMove.isEnPassant() {
@@ -71,6 +71,48 @@ func (g *Game) MakeMove(move *types.Move) {
 		g.enPassant = -1
 	}
 
+	if g.toMove == 'w' {
+		g.toMove = 'b'
+	} else {
+		g.toMove = 'w'
+	}
+
+	g.trackedMoves = append(g.trackedMoves, trackedMove)
+	g.attackingMoves = getAttackingMoves(g.board, g.toMove)
+	g.legalMoves = getLegalMoves(g.board, g.toMove, &g.castleRights, g.enPassant, g.attackingMoves)
+}
+
+func (g *Game) MakePromotion(promotion *types.Promotion) {
+	movedPiece := g.board[promotion.From]
+	captured := g.board[promotion.To]
+	var promotedTo Piece
+	switch promotion.PromoteTo {
+	case types.KnightPromotion:
+		promotedTo = Knight
+		break
+	case types.BishopPromotion:
+		promotedTo = Bishop
+		break
+	case types.RookPromotion:
+		promotedTo = Rook
+		break
+	case types.QueenPromotion:
+		promotedTo = Queen
+		break
+	}
+	if g.toMove == 'w' {
+		promotedTo |= White
+	} else {
+		promotedTo |= Black
+	}
+    g.board[promotion.To] = promotedTo
+    g.board[promotion.From] = None
+	trackedMove := newTrackedMove(movedPiece, captured, promotion.From, promotion.To, true, promotedTo)
+
+	disablesCast, disabledcastleDirections := trackedMove.disablesCastle(&g.castleRights)
+	if disablesCast {
+		g.disableCastle(disabledcastleDirections)
+	}
 	if g.toMove == 'w' {
 		g.toMove = 'b'
 	} else {

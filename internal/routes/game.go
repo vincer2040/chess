@@ -79,6 +79,11 @@ func handleData(data *types.Data, game *game.Game) protocol.Builder {
 		game.MakeMove(&move)
 		b = b.AddCommand("OK")
 		break
+    case types.PromotionType:
+        promotion := data.Data.(types.Promotion)
+        fmt.Printf("promotion: %+v\n", promotion)
+        game.MakePromotion(&promotion)
+        b = b.AddCommand("OK")
 	case types.PositionType:
 		pos := data.Data.(types.Position)
 		fmt.Println("position:", pos)

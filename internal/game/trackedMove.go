@@ -5,18 +5,22 @@ import (
 )
 
 type TrackedMove struct {
-	Piece    Piece
-	Captured Piece
-	From     int
-	To       int
+	Piece       Piece
+	Captured    Piece
+	From        int
+	To          int
+	IsPromotion bool
+	PromoteTo   Piece
 }
 
-func newTrackedMove(piece, captured Piece, from, to int) TrackedMove {
+func newTrackedMove(piece, captured Piece, from, to int, isPromotion bool, promoteTo Piece) TrackedMove {
 	return TrackedMove{
-		Piece:    piece,
-		Captured: captured,
-		From:     from,
-		To:       to,
+		Piece:       piece,
+		Captured:    captured,
+		From:        from,
+		To:          to,
+		IsPromotion: isPromotion,
+		PromoteTo:   promoteTo,
 	}
 }
 
