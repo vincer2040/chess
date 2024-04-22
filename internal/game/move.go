@@ -1,6 +1,7 @@
 package game
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -20,8 +21,9 @@ const (
 	SouthEast
 )
 
-func getLegalMoves(board Board, toMove byte, castleRights *CastleRights, enPassant int) LegalMoves {
+func getLegalMoves(board Board, toMove byte, castleRights *CastleRights, enPassant int, attackingMoves AttackingMoves) LegalMoves {
 	var legalMoves LegalMoves = make(LegalMoves)
+	fmt.Printf("attacking: %+v\n", attackingMoves)
 	for idx, pieceInfo := range board {
 		color := pieceInfo & COLORMASK
 		piece := pieceInfo & PIECEMASK
@@ -121,21 +123,21 @@ func getAttackingMoves(board Board, toMove byte) AttackingMoves {
 			}
 			attackingMoves[idx] = moves
 			break
-        case Queen:
-            moves := getAttackingDiagonalMoves(board, idx, color)
-            moves = append(moves, getAttackingStraightMoves(board, idx, color)...)
-            if len(moves) == 0 {
-                break
-            }
-            attackingMoves[idx] = moves
-            break
-        case King:
-            moves := getAttackingKingMoves(board, idx, color)
-            if len(moves) == 0 {
-                break
-            }
-            attackingMoves[idx] = moves
-            break
+		case Queen:
+			moves := getAttackingDiagonalMoves(board, idx, color)
+			moves = append(moves, getAttackingStraightMoves(board, idx, color)...)
+			if len(moves) == 0 {
+				break
+			}
+			attackingMoves[idx] = moves
+			break
+		case King:
+			moves := getAttackingKingMoves(board, idx, color)
+			if len(moves) == 0 {
+				break
+			}
+			attackingMoves[idx] = moves
+			break
 		}
 	}
 	return attackingMoves
@@ -278,7 +280,7 @@ func getAttackingKingMoves(board Board, idx int, color Piece) [][]int {
 	maxIdx := getMaxIdxForRank(curRank)
 	straightOffsets := []int{8, 1, -1, -8}
 	diagOffsets := []int{7, 9, -7, -9}
-    var tmp1 []int
+	var tmp1 []int
 	for _, offset := range straightOffsets {
 		sq := idx + offset
 		if sq >= 64 || sq < 0 {
@@ -293,11 +295,11 @@ func getAttackingKingMoves(board Board, idx int, color Piece) [][]int {
 		}
 	}
 
-    if len(tmp1) > 0 {
-        res = append(res, tmp1)
-    }
+	if len(tmp1) > 0 {
+		res = append(res, tmp1)
+	}
 
-    var tmp2 []int
+	var tmp2 []int
 	for _, offset := range diagOffsets {
 		sq := idx + offset
 		if sq > 64 || sq < 0 {
@@ -313,10 +315,10 @@ func getAttackingKingMoves(board Board, idx int, color Piece) [][]int {
 		}
 	}
 
-    if len(tmp2) > 0 {
-        res = append(res, tmp2)
-    }
-    return res
+	if len(tmp2) > 0 {
+		res = append(res, tmp2)
+	}
+	return res
 }
 
 func getPawnMoves(board Board, idx int, color Piece, enPassant int) []int {

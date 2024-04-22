@@ -8,7 +8,7 @@ const (
 	MoveType
 	ErrorType
 	CommandType
-    PromotionType
+	PromotionType
 )
 
 type DataInterface interface {
@@ -34,19 +34,19 @@ type Error string
 type PromotedTo int
 
 const (
-    KnightPromotion PromotedTo = iota
-    BishopPromotion
-    RookPromotion
-    QueenPromotion
+	KnightPromotion PromotedTo = iota
+	BishopPromotion
+	RookPromotion
+	QueenPromotion
 )
 
 type Promotion struct {
-    Move
-    PromoteTo PromotedTo
+	Move
+	PromoteTo PromotedTo
 }
 
-func (c Command) data()  {}
-func (p Position) data() {}
-func (m Move) data()     {}
-func (e Error) data()    {}
+func (c Command) data()   {}
+func (p Position) data()  {}
+func (m Move) data()      {}
+func (e Error) data()     {}
 func (p Promotion) data() {}

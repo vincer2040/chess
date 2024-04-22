@@ -32,16 +32,16 @@ func New(fen string) Game {
 	toMove := byte(split[1][0])
 	castleRights := split[2]
 	g := Game{
-		board:        board,
-		trackedMoves: make([]TrackedMove, 0),
-		toMove:       toMove,
-		castleRights: newCastleRights(castleRights),
-		enPassant:    -1,
-		legalMoves:   nil,
-        attackingMoves: nil,
+		board:          board,
+		trackedMoves:   make([]TrackedMove, 0),
+		toMove:         toMove,
+		castleRights:   newCastleRights(castleRights),
+		enPassant:      -1,
+		legalMoves:     nil,
+		attackingMoves: nil,
 	}
-	g.legalMoves = getLegalMoves(g.board, g.toMove, &g.castleRights, g.enPassant)
-    g.attackingMoves = getAttackingMoves(g.board, g.toMove)
+	g.attackingMoves = getAttackingMoves(g.board, g.toMove)
+	g.legalMoves = getLegalMoves(g.board, g.toMove, &g.castleRights, g.enPassant, g.attackingMoves)
 	return g
 }
 
@@ -78,8 +78,8 @@ func (g *Game) MakeMove(move *types.Move) {
 	}
 
 	g.trackedMoves = append(g.trackedMoves, trackedMove)
-    g.attackingMoves = getAttackingMoves(g.board, g.toMove)
-	g.legalMoves = getLegalMoves(g.board, g.toMove, &g.castleRights, g.enPassant)
+	g.attackingMoves = getAttackingMoves(g.board, g.toMove)
+	g.legalMoves = getLegalMoves(g.board, g.toMove, &g.castleRights, g.enPassant, g.attackingMoves)
 }
 
 func (g *Game) GetLegalMoves() LegalMoves {
@@ -87,7 +87,7 @@ func (g *Game) GetLegalMoves() LegalMoves {
 }
 
 func (g *Game) GetAttackingMoves() AttackingMoves {
-    return g.attackingMoves
+	return g.attackingMoves
 }
 
 func (g *Game) PrintBoard() {
