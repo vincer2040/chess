@@ -192,21 +192,13 @@ export class Parser {
         /** @type {import("./types").LegalMoves}*/
         const res = new Map();
         this.#readByte();
-        let len = 0;
-        while (this.#byte !== RET_CAR && this.#byte !== 0) {
-            len = (len * 10) + (this.#byte - ZERO_BYTE);
-            this.#readByte();
-        }
+        let len = this.#parseNumber();
         if (!this.#expectEnd()) {
             return null;
         }
         this.#readByte();
         for (let i = 0; i < len; ++i) {
-            let key = 0;
-            while (this.#byte !== RET_CAR && this.#byte !== 0) {
-                key = (key * 10) + (this.#byte - ZERO_BYTE);
-                this.#readByte();
-            }
+            let key = this.#parseNumber();
             if (!this.#expectEnd()) {
                 return null;
             }
@@ -214,11 +206,7 @@ export class Parser {
                 return null;
             }
             this.#readByte();
-            let numMoves = 0;
-            while (this.#byte !== RET_CAR && this.#byte !== 0) {
-                numMoves = (numMoves * 10) + (this.#byte - ZERO_BYTE);
-                this.#readByte();
-            }
+            let numMoves = this.#parseNumber();
             if (!this.#expectEnd()) {
                 return null;
             }
@@ -257,21 +245,13 @@ export class Parser {
         /** @type {import("./types").AttackingMoves}*/
         const res = new Map();
         this.#readByte();
-        let len = 0;
-        while (this.#byte !== RET_CAR && this.#byte !== 0) {
-            len = (len * 10) + (this.#byte - ZERO_BYTE);
-            this.#readByte();
-        }
+        let len = this.#parseNumber();
         if (!this.#expectEnd()) {
             return null;
         }
         this.#readByte();
         for (let i = 0; i < len; ++i) {
-            let key = 0;
-            while (this.#byte !== RET_CAR && this.#byte !== 0) {
-                key = (key * 10) + (this.#byte - ZERO_BYTE);
-                this.#readByte();
-            }
+            let key = this.#parseNumber();
             if (!this.#expectEnd()) {
                 return null;
             }
@@ -279,11 +259,7 @@ export class Parser {
                 return null;
             }
             this.#readByte();
-            let numDirections = 0;
-            while (this.#byte !== RET_CAR && this.#byte !== 0) {
-                numDirections = (numDirections * 10) + (this.#byte - ZERO_BYTE);
-                this.#readByte();
-            }
+            let numDirections = this.#parseNumber();
             if (!this.#expectEnd()) {
                 return null;
             }
@@ -294,11 +270,7 @@ export class Parser {
                     return null;
                 }
                 this.#readByte();
-                let numMoves = 0;
-                while (this.#byte !== RET_CAR && this.#byte !== 0) {
-                    numMoves = (numMoves * 10) + (this.#byte - ZERO_BYTE);
-                    this.#readByte();
-                }
+                let numMoves = this.#parseNumber();
                 if (!this.#expectEnd()) {
                     return null;
                 }
@@ -324,6 +296,18 @@ export class Parser {
                 allMoves.push(moves);
             }
             res.set(key, allMoves);
+        }
+        return res;
+    }
+
+    /**
+     * @returns {number}
+     */
+    #parseNumber() {
+        let res = 0;
+        while (this.#byte !== RET_CAR && this.#byte !== 0) {
+            res = (res * 10) + (this.#byte - ZERO_BYTE);
+            this.#readByte();
         }
         return res;
     }
