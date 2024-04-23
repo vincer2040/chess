@@ -39,15 +39,18 @@ func getLegalMoves(board Board, toMove byte, castleRights *CastleRights, enPassa
 	fmt.Printf("checks: %+v\n", checks)
 	if checks.inCheck && len(checks.checks) > 1 {
 		// we are in double check and can only move the king
-		fmt.Println("double check")
-        var color Piece
-        if toMove == 'w' {
-            color = White
-        } else {
-            color = Black
-        }
-        legalMoves[checks.kingIdx] = getKingMoves(board, checks.kingIdx, color, castleRights, checks)
-        return legalMoves
+		var color Piece
+		if toMove == 'w' {
+			color = White
+		} else {
+			color = Black
+		}
+		moves := getKingMoves(board, checks.kingIdx, color, castleRights, &checks)
+		if len(moves) == 0 {
+			return legalMoves
+		}
+		legalMoves[checks.kingIdx] = moves
+		return legalMoves
 	}
 	for idx, pieceInfo := range board {
 		color := pieceInfo & COLORMASK
@@ -61,43 +64,43 @@ func getLegalMoves(board Board, toMove byte, castleRights *CastleRights, enPassa
 
 		switch piece {
 		case Pawn:
-			moves := getPawnMoves(board, idx, color, enPassant)
+			moves := getPawnMoves(board, idx, color, enPassant, &checks)
 			if len(moves) == 0 {
 				break
 			}
 			legalMoves[idx] = moves
 			break
 		case Knight:
-			moves := getKnightMoves(board, idx, color)
+			moves := getKnightMoves(board, idx, color, &checks)
 			if len(moves) == 0 {
 				break
 			}
 			legalMoves[idx] = moves
 			break
 		case Bishop:
-			moves := getDiagonalMoves(board, idx, color)
+			moves := getDiagonalMoves(board, idx, color, &checks)
 			if len(moves) == 0 {
 				break
 			}
 			legalMoves[idx] = moves
 			break
 		case Rook:
-			moves := getStraightMoves(board, idx, color)
+			moves := getStraightMoves(board, idx, color, &checks)
 			if len(moves) == 0 {
 				break
 			}
 			legalMoves[idx] = moves
 			break
 		case Queen:
-			moves := getStraightMoves(board, idx, color)
-			moves = append(moves, getDiagonalMoves(board, idx, color)...)
+			moves := getStraightMoves(board, idx, color, &checks)
+			moves = append(moves, getDiagonalMoves(board, idx, color, &checks)...)
 			if len(moves) == 0 {
 				break
 			}
 			legalMoves[idx] = moves
 			break
 		case King:
-			moves := getKingMoves(board, idx, color, castleRights, checks)
+			moves := getKingMoves(board, idx, color, castleRights, &checks)
 			if len(moves) == 0 {
 				break
 			}
@@ -108,7 +111,7 @@ func getLegalMoves(board Board, toMove byte, castleRights *CastleRights, enPassa
 	return legalMoves
 }
 
-func getLegalMovesNoKing(board Board, toMove byte) LegalMoves {
+func getLegalMovesOtherSide(board Board, toMove byte) LegalMoves {
 	var legalMoves LegalMoves = make(LegalMoves)
 	for idx, pieceInfo := range board {
 		color := pieceInfo & COLORMASK
@@ -122,36 +125,36 @@ func getLegalMovesNoKing(board Board, toMove byte) LegalMoves {
 
 		switch piece {
 		case Pawn:
-			moves := getPawnMoves(board, idx, color, -1)
+			moves := getPawnMoves(board, idx, color, -1, &Checks{inCheck: false})
 			if len(moves) == 0 {
 				break
 			}
 			legalMoves[idx] = moves
 			break
 		case Knight:
-			moves := getKnightMoves(board, idx, color)
+			moves := getKnightMoves(board, idx, color, &Checks{inCheck: false})
 			if len(moves) == 0 {
 				break
 			}
 			legalMoves[idx] = moves
 			break
 		case Bishop:
-			moves := getDiagonalMoves(board, idx, color)
+			moves := getDiagonalMoves(board, idx, color, &Checks{inCheck: false})
 			if len(moves) == 0 {
 				break
 			}
 			legalMoves[idx] = moves
 			break
 		case Rook:
-			moves := getStraightMoves(board, idx, color)
+			moves := getStraightMoves(board, idx, color, &Checks{inCheck: false})
 			if len(moves) == 0 {
 				break
 			}
 			legalMoves[idx] = moves
 			break
 		case Queen:
-			moves := getStraightMoves(board, idx, color)
-			moves = append(moves, getDiagonalMoves(board, idx, color)...)
+			moves := getStraightMoves(board, idx, color, &Checks{inCheck: false})
+			moves = append(moves, getDiagonalMoves(board, idx, color, &Checks{inCheck: false})...)
 			if len(moves) == 0 {
 				break
 			}
@@ -216,7 +219,7 @@ func getAttackingMoves(board Board, toMove byte) AttackingMoves {
 	return attackingMoves
 }
 
-func getPawnMoves(board Board, idx int, color Piece, enPassant int) []int {
+func getPawnMoves(board Board, idx int, color Piece, enPassant int, checks *Checks) []int {
 	var res []int
 	var sign int
 	var onStartSquare bool
@@ -229,7 +232,13 @@ func getPawnMoves(board Board, idx int, color Piece, enPassant int) []int {
 	}
 	sq := idx + (8 * sign)
 	if !board.hasPieceOnIdx(sq) {
-		res = append(res, sq)
+		if checks.inCheck {
+			if moveResolvesCheck(sq, checks) {
+				res = append(res, sq)
+			}
+		} else {
+			res = append(res, sq)
+		}
 	}
 	rank := getRankForIdx(sq)
 	left := sq - 1
@@ -237,16 +246,34 @@ func getPawnMoves(board Board, idx int, color Piece, enPassant int) []int {
 	if onStartSquare {
 		sq += (8 * sign)
 		if !board.hasPieceOnIdx(sq) {
-			res = append(res, sq)
+			if checks.inCheck {
+				if moveResolvesCheck(sq, checks) {
+					res = append(res, sq)
+				}
+			} else {
+				res = append(res, sq)
+			}
 		}
 	}
 	leftRank := getRankForIdx(left)
 	rightRank := getRankForIdx(right)
 	if board.hasPieceOnIdx(left) && !board.hasColorPieceOnIdx(left, color) && rank == leftRank {
-		res = append(res, left)
+		if checks.inCheck {
+			if moveResolvesCheck(left, checks) {
+				res = append(res, left)
+			}
+		} else {
+			res = append(res, left)
+		}
 	}
 	if board.hasPieceOnIdx(right) && !board.hasColorPieceOnIdx(right, color) && rank == rightRank {
-		res = append(res, right)
+		if checks.inCheck {
+			if moveResolvesCheck(right, checks) {
+				res = append(res, right)
+			}
+		} else {
+			res = append(res, right)
+		}
 	}
 	if enPassant == -1 {
 		return res
@@ -259,24 +286,48 @@ func getPawnMoves(board Board, idx int, color Piece, enPassant int) []int {
 	if enPassant == left {
 		if leftRank == rank {
 			if color == White {
-				res = append(res, left-8)
+				if checks.inCheck {
+					if moveResolvesCheck(left-8, checks) {
+						res = append(res, left-8)
+					}
+				} else {
+					res = append(res, left-8)
+				}
 			} else {
-				res = append(res, left+8)
+				if checks.inCheck {
+					if moveResolvesCheck(left+8, checks) {
+						res = append(res, left+8)
+					}
+				} else {
+					res = append(res, left+8)
+				}
 			}
 		}
 	} else if enPassant == right {
 		if rightRank == rank {
 			if color == White {
-				res = append(res, right-8)
+				if checks.inCheck {
+					if moveResolvesCheck(left-8, checks) {
+						res = append(res, left-8)
+					}
+				} else {
+					res = append(res, left-8)
+				}
 			} else {
-				res = append(res, right+8)
+				if checks.inCheck {
+					if moveResolvesCheck(left+8, checks) {
+						res = append(res, left+8)
+					}
+				} else {
+					res = append(res, left+8)
+				}
 			}
 		}
 	}
 	return res
 }
 
-func getDiagonalMoves(board Board, idx int, color Piece) []int {
+func getDiagonalMoves(board Board, idx int, color Piece, checks *Checks) []int {
 	var res []int
 	offsets := []int{9, 7, -9, -7}
 	directions := []Direction{SouthEast, SouthWest, NorthWest, NorthEast}
@@ -286,12 +337,24 @@ func getDiagonalMoves(board Board, idx int, color Piece) []int {
 		sq := idx + offset
 		for j := 0; j < n; j++ {
 			if !board.hasPieceOnIdx(sq) {
-				res = append(res, sq)
+				if checks.inCheck {
+					if moveResolvesCheck(sq, checks) {
+						res = append(res, sq)
+					}
+				} else {
+					res = append(res, sq)
+				}
 				sq += offset
 				continue
 			}
 			if !board.hasColorPieceOnIdx(sq, color) {
-				res = append(res, sq)
+				if checks.inCheck {
+					if moveResolvesCheck(sq, checks) {
+						res = append(res, sq)
+					}
+				} else {
+					res = append(res, sq)
+				}
 				break
 			}
 			break
@@ -301,7 +364,7 @@ func getDiagonalMoves(board Board, idx int, color Piece) []int {
 	return res
 }
 
-func getStraightMoves(board Board, idx int, color Piece) []int {
+func getStraightMoves(board Board, idx int, color Piece, checks *Checks) []int {
 	var res []int
 	offsets := []int{8, 1, -8, -1}
 	dirs := []Direction{South, East, North, West}
@@ -311,12 +374,24 @@ func getStraightMoves(board Board, idx int, color Piece) []int {
 		sq := idx + offset
 		for j := 0; j < n; j++ {
 			if !board.hasPieceOnIdx(sq) {
-				res = append(res, sq)
+				if checks.inCheck {
+					if moveResolvesCheck(sq, checks) {
+						res = append(res, sq)
+					}
+				} else {
+					res = append(res, sq)
+				}
 				sq += offset
 				continue
 			}
 			if !board.hasColorPieceOnIdx(sq, color) {
-				res = append(res, sq)
+				if checks.inCheck {
+					if moveResolvesCheck(sq, checks) {
+						res = append(res, sq)
+					}
+				} else {
+					res = append(res, sq)
+				}
 				break
 			}
 			break
@@ -326,7 +401,7 @@ func getStraightMoves(board Board, idx int, color Piece) []int {
 	return res
 }
 
-func getKnightMoves(board Board, idx int, color Piece) []int {
+func getKnightMoves(board Board, idx int, color Piece, checks *Checks) []int {
 	var res []int
 	offsets := []struct {
 		x int
@@ -352,18 +427,30 @@ func getKnightMoves(board Board, idx int, color Piece) []int {
 			continue
 		}
 		if !board.hasPieceOnIdx(sq) {
-			res = append(res, sq)
+			if checks.inCheck {
+				if moveResolvesCheck(sq, checks) {
+					res = append(res, sq)
+				}
+			} else {
+				res = append(res, sq)
+			}
 			continue
 		}
 		if !board.hasColorPieceOnIdx(sq, color) {
-			res = append(res, sq)
+			if checks.inCheck {
+				if moveResolvesCheck(sq, checks) {
+					res = append(res, sq)
+				}
+			} else {
+				res = append(res, sq)
+			}
 			continue
 		}
 	}
 	return res
 }
 
-func getKingMoves(board Board, idx int, color Piece, castleRights *CastleRights, checks Checks) []int {
+func getKingMoves(board Board, idx int, color Piece, castleRights *CastleRights, checks *Checks) []int {
 	var res []int
 	curRank := getRankForIdx(idx)
 	minIdx := getMinIdxForRank(curRank)
@@ -388,7 +475,7 @@ func getKingMoves(board Board, idx int, color Piece, castleRights *CastleRights,
 		if !board.hasPieceOnIdx(sq) {
 			boardCopy[idx] = None
 			boardCopy[sq] = King | color
-			newLegalMoves := getLegalMovesNoKing(boardCopy, nextToMove)
+			newLegalMoves := getLegalMovesOtherSide(boardCopy, nextToMove)
 			if !legalMovesContainsCaptureOfIdx(sq, newLegalMoves) {
 				res = append(res, sq)
 			}
@@ -400,7 +487,7 @@ func getKingMoves(board Board, idx int, color Piece, castleRights *CastleRights,
 			old := boardCopy[sq]
 			boardCopy[idx] = None
 			boardCopy[sq] = King | color
-			newLegalMoves := getLegalMovesNoKing(boardCopy, nextToMove)
+			newLegalMoves := getLegalMovesOtherSide(boardCopy, nextToMove)
 			if !legalMovesContainsCaptureOfIdx(sq, newLegalMoves) {
 				res = append(res, sq)
 			}
@@ -422,7 +509,7 @@ func getKingMoves(board Board, idx int, color Piece, castleRights *CastleRights,
 		if !board.hasPieceOnIdx(sq) {
 			boardCopy[idx] = None
 			boardCopy[sq] = King | color
-			newLegalMoves := getLegalMovesNoKing(boardCopy, nextToMove)
+			newLegalMoves := getLegalMovesOtherSide(boardCopy, nextToMove)
 			if !legalMovesContainsCaptureOfIdx(sq, newLegalMoves) {
 				res = append(res, sq)
 			}
@@ -434,7 +521,7 @@ func getKingMoves(board Board, idx int, color Piece, castleRights *CastleRights,
 			old := boardCopy[sq]
 			boardCopy[idx] = None
 			boardCopy[sq] = King | color
-			newLegalMoves := getLegalMovesNoKing(boardCopy, nextToMove)
+			newLegalMoves := getLegalMovesOtherSide(boardCopy, nextToMove)
 			if !legalMovesContainsCaptureOfIdx(sq, newLegalMoves) {
 				res = append(res, sq)
 			}
@@ -449,7 +536,7 @@ func getKingMoves(board Board, idx int, color Piece, castleRights *CastleRights,
 			if castleRights.WhiteKing && board[61] == None && board[62] == None {
 				boardCopy[idx] = None
 				boardCopy[62] = King | color
-				newLegalMoves := getLegalMovesNoKing(boardCopy, nextToMove)
+				newLegalMoves := getLegalMovesOtherSide(boardCopy, nextToMove)
 				if !legalMovesContainsCaptureOfIdx(62, newLegalMoves) && !legalMovesContainsCaptureOfIdx(61, newLegalMoves) {
 					res = append(res, 62)
 				}
@@ -459,7 +546,7 @@ func getKingMoves(board Board, idx int, color Piece, castleRights *CastleRights,
 			if castleRights.WhiteQueen && board[59] == None && board[58] == None && board[57] == None {
 				boardCopy[idx] = None
 				boardCopy[58] = King | color
-				newLegalMoves := getLegalMovesNoKing(boardCopy, nextToMove)
+				newLegalMoves := getLegalMovesOtherSide(boardCopy, nextToMove)
 				if !legalMovesContainsCaptureOfIdx(58, newLegalMoves) && !legalMovesContainsCaptureOfIdx(59, newLegalMoves) && !legalMovesContainsCaptureOfIdx(57, newLegalMoves) {
 					res = append(res, 58)
 				}
@@ -470,7 +557,7 @@ func getKingMoves(board Board, idx int, color Piece, castleRights *CastleRights,
 			if castleRights.BlackKing && board[5] == None && board[6] == None {
 				boardCopy[idx] = None
 				boardCopy[6] = King | color
-				newLegalMoves := getLegalMovesNoKing(boardCopy, nextToMove)
+				newLegalMoves := getLegalMovesOtherSide(boardCopy, nextToMove)
 				if !legalMovesContainsCaptureOfIdx(6, newLegalMoves) && !legalMovesContainsCaptureOfIdx(5, newLegalMoves) {
 					res = append(res, 6)
 				}
@@ -480,7 +567,7 @@ func getKingMoves(board Board, idx int, color Piece, castleRights *CastleRights,
 			if castleRights.BlackQueen && board[3] == None && board[2] == None && board[1] == None {
 				boardCopy[idx] = None
 				boardCopy[2] = King | color
-				newLegalMoves := getLegalMovesNoKing(boardCopy, nextToMove)
+				newLegalMoves := getLegalMovesOtherSide(boardCopy, nextToMove)
 				if !legalMovesContainsCaptureOfIdx(2, newLegalMoves) && !legalMovesContainsCaptureOfIdx(2, newLegalMoves) && !legalMovesContainsCaptureOfIdx(1, newLegalMoves) {
 					res = append(res, 2)
 				}
@@ -695,6 +782,22 @@ func legalMovesContainsCaptureOfIdx(idx int, legalMoves LegalMoves) bool {
 			if move == idx {
 				return true
 			}
+		}
+	}
+	return false
+}
+
+func moveResolvesCheck(sq int, checks *Checks) bool {
+	if len(checks.checks) != 1 {
+		panic("not a single check")
+	}
+	check := checks.checks[0]
+	if sq == check.from {
+		return true
+	}
+	for _, i := range check.to {
+		if i == sq {
+			return true
 		}
 	}
 	return false
